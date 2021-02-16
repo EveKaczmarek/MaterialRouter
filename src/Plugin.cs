@@ -26,7 +26,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.0.0";
+		public const string Version = "1.0.1.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 

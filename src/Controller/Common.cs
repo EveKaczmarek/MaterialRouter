@@ -84,12 +84,16 @@ namespace MaterialRouter
 
 			internal void ApplyBodyTrigger()
 			{
+				if (BodyTrigger?.Count == 0)
+					BodyTrigger = new List<RouteRule>();
 				ApplyRules(BodyTrigger);
 			}
 
 			internal void ApplyOutfitTrigger() => ApplyOutfitTrigger(CurrentCoordinateIndex);
 			internal void ApplyOutfitTrigger(int CoordinateIndex)
 			{
+				if (!OutfitTriggers.ContainsKey(CoordinateIndex) || OutfitTriggers[CoordinateIndex] == null)
+					OutfitTriggers[CoordinateIndex] = new List<RouteRule>();
 				CurOutfitTrigger = OutfitTriggers[CoordinateIndex];
 				ApplyRules(CurOutfitTrigger);
 			}
