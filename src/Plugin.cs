@@ -26,7 +26,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.1.0";
+		public const string Version = "1.0.2.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 
@@ -116,7 +116,38 @@ namespace MaterialRouter
 					chaCtrl.Reload();
 					CustomBase.Instance.updateCustomUI = true;
 				});
+
+				ev.AddControl(new MakerButton("Head Renderer Info", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead));
+				ev.AddControl(new MakerButton("Body Renderer Info", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody));
+
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Top, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[0]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Bottom, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[1]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Bra, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[2]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Shorts, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[3]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Gloves, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[4]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Panst, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[5]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Socks, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[6]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.InnerShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[7]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.OuterShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[8]));
+
+				MakerAPI.AddAccessoryWindowControl(new MakerButton("Renderer Info", null, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
+
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2]));
+				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3]));
 			};
+		}
+
+		internal static void PrintRendererInfo(ChaControl chaCtrl, GameObject go)
+		{
+			Renderer[] rends = go.GetComponentsInChildren<Renderer>(true);
+			foreach (Renderer rend in rends)
+			{
+				Logger.LogWarning("GameObjectPath: " + GetGameObjectPath(rend.transform).Replace(chaCtrl.gameObject.name + "/", ""));
+				foreach (Material mat in rend.materials)
+					Logger.LogInfo("Material: " + mat.NameFormatted());
+			}
 		}
 
 		internal static void DebugMsg(LogLevel LogLevel, string LogMsg)
