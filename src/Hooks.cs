@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 
+using ChaCustom;
 using UnityEngine;
-using HarmonyLib;
+using UnityEngine.UI;
+using TMPro;
 
 using BepInEx.Logging;
-	
+using HarmonyLib;
+
 using KKAPI.Chara;
+using KKAPI.Maker;
 
 namespace MaterialRouter
 {
@@ -90,6 +95,24 @@ namespace MaterialRouter
 				if (pluginCtrl == null) return;
 				DebugMsg(LogLevel.Warning, $"MaterialEditorCharaController_CorrectTongue_Prefix [{pluginCtrl.CurrentCoordinateIndex}]");
 				pluginCtrl.CorrectTongue_Prefix();
+			}
+		}
+
+		internal class HooksMaker
+		{
+			[HarmonyPostfix, HarmonyPatch(typeof(CvsClothesCopy), "CopyClothes")]
+			internal static void CvsClothesCopy_CopyClothes_Postfix(TMP_Dropdown[] ___ddCoordeType, Toggle[] ___tglKind)
+			{
+				List<int> copySlots = new List<int>();
+				for (int i = 0; i < Enum.GetNames(typeof(ChaFileDefine.ClothesKind)).Length; i++)
+				{
+					if (___tglKind[i].isOn)
+						copySlots.Add(i);
+				}
+
+				MaterialRouterController pluginCtrl = GetController(MakerAPI.GetCharacterControl());
+				if (pluginCtrl != null)
+					pluginCtrl.ClothingCopiedEvent(___ddCoordeType[1].value, ___ddCoordeType[0].value, copySlots);
 			}
 		}
 	}

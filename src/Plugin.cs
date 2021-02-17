@@ -26,7 +26,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.2.0";
+		public const string Version = "1.0.3.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 
@@ -37,6 +37,7 @@ namespace MaterialRouter
 		internal static new ManualLogSource Logger;
 		internal static Plugin Instance;
 		internal static Harmony HooksInstance;
+		internal static Harmony HooksMakerInstance;
 
 		private void Awake()
 		{
@@ -60,10 +61,33 @@ namespace MaterialRouter
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("OnCoordinateBeingLoaded", AccessTools.all, null, new[] { typeof(ChaFileCoordinate), typeof(bool) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_OnCoordinateBeingLoaded_Prefix)));
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("CorrectTongue", AccessTools.all, null, new Type[0], null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_CorrectTongue_Prefix)));
 
+			MakerAPI.MakerBaseLoaded += (object sender, RegisterCustomControlsEvent ev) =>
+			{
+				HooksMakerInstance = Harmony.CreateAndPatchAll(typeof(HooksMaker));
+			};
+
+			MakerAPI.MakerExiting += (object sender, EventArgs ev) =>
+			{
+				HooksMakerInstance.UnpatchAll(HooksMakerInstance.Id);
+				HooksMakerInstance = null;
+			};
+
+			AccessoriesApi.AccessoryTransferred += (object sender, AccessoryTransferEventArgs ev) =>
+			{
+				MaterialRouterController pluginCtrl = GetController(MakerAPI.GetCharacterControl());
+				pluginCtrl.AccessoryTransferEvent(ev);
+			};
+
+			AccessoriesApi.AccessoriesCopied += (object sender, AccessoryCopyEventArgs ev) =>
+			{
+				MaterialRouterController pluginCtrl = GetController(MakerAPI.GetCharacterControl());
+				pluginCtrl.AccessoryCopyEvent(ev);
+			};
+
 			MakerAPI.RegisterCustomSubCategories += (object sender, RegisterSubCategoriesEvent ev) =>
 			{
 				ChaControl chaCtrl = MakerAPI.GetCharacterControl();
-				MaterialRouterController pluginCtrl = chaCtrl?.gameObject?.GetComponent<MaterialRouterController>();
+				MaterialRouterController pluginCtrl = GetController(chaCtrl);
 
 				MakerCategory category = new MakerCategory("05_ParameterTop", "tglMaterialRouter", MakerConstants.Parameter.Attribute.Position + 1, "Router");
 				ev.AddSubCategory(category);
@@ -141,6 +165,8 @@ namespace MaterialRouter
 
 		internal static void PrintRendererInfo(ChaControl chaCtrl, GameObject go)
 		{
+			if (go == null)
+				return;
 			Renderer[] rends = go.GetComponentsInChildren<Renderer>(true);
 			foreach (Renderer rend in rends)
 			{
