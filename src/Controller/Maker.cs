@@ -10,7 +10,7 @@ using KKAPI.Maker;
 
 namespace MaterialRouter
 {
-	public partial class Plugin
+	public partial class MaterialRouter
 	{
 		public partial class MaterialRouterController : CharaCustomFunctionController
 		{
@@ -78,7 +78,7 @@ namespace MaterialRouter
 				}
 				if (!Directory.Exists(SavePath))
 					Directory.CreateDirectory(SavePath);
-				string ExportFilePath = Path.Combine(SavePath, SaveFile["body"]);
+				string ExportFilePath = Path.Combine(SavePath, SaveFile["Outfit"]);
 				string json = JSONSerializer.Serialize(data.GetType(), data, true);
 				File.WriteAllText(ExportFilePath, json);
 				Logger.LogMessage($"[ExportOutfitTrigger] {data?.Count} rule(s) exported to {ExportFilePath}");

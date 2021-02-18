@@ -14,7 +14,7 @@ using KKAPI.Maker;
 
 namespace MaterialRouter
 {
-	public partial class Plugin
+	public partial class MaterialRouter
 	{
 		internal static string GetGameObjectPath(Transform transform)
 		{

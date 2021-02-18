@@ -22,11 +22,11 @@ namespace MaterialRouter
 	[BepInPlugin(GUID, PluginName, Version)]
 	[BepInDependency("marco.kkapi", "1.1.5")]
 	[BepInDependency("com.deathweasel.bepinex.materialeditor", "2.5")]
-	public partial class Plugin : BaseUnityPlugin
+	public partial class MaterialRouter : BaseUnityPlugin
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.3.0";
+		public const string Version = "1.0.4.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 
@@ -35,7 +35,7 @@ namespace MaterialRouter
 		internal static Dictionary<string, string> SaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody.json", ["Outfit"] = "MaterialRouterOutfit.json", ["Outfits"] = "MaterialRouterOutfits.json" };
 
 		internal static new ManualLogSource Logger;
-		internal static Plugin Instance;
+		internal static MaterialRouter Instance;
 		internal static Harmony HooksInstance;
 		internal static Harmony HooksMakerInstance;
 

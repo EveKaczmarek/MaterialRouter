@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using static MaterialRouter.Plugin;
+using static MaterialRouter.MaterialRouter;
 
 [assembly: AssemblyTitle(PluginName)]
 [assembly: AssemblyDescription(PluginName)]

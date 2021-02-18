@@ -12,7 +12,7 @@ using KKAPI.Chara;
 
 namespace MaterialRouter
 {
-	public partial class Plugin
+	public partial class MaterialRouter
 	{
 		public partial class MaterialRouterController : CharaCustomFunctionController
 		{
@@ -92,7 +92,7 @@ namespace MaterialRouter
 			internal void ApplyOutfitTrigger() => ApplyOutfitTrigger(CurrentCoordinateIndex);
 			internal void ApplyOutfitTrigger(int CoordinateIndex)
 			{
-				if (!OutfitTriggers.ContainsKey(CoordinateIndex) || OutfitTriggers[CoordinateIndex] == null)
+				if (!OutfitTriggers.ContainsKey(CoordinateIndex) || OutfitTriggers[CoordinateIndex]?.Count == 0)
 					OutfitTriggers[CoordinateIndex] = new List<RouteRule>();
 				CurOutfitTrigger = OutfitTriggers[CoordinateIndex];
 				ApplyRules(CurOutfitTrigger);
