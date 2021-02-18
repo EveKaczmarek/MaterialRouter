@@ -110,21 +110,21 @@ namespace MaterialRouter
 					Transform target = ChaControl.transform.Find(rule.GameObjectPath);
 					if (target == null)
 					{
-						Logger.LogError($"[ApplyRules] {rule.GameObjectPath} not found");
+						DebugMsg(LogLevel.Error, $"[ApplyRules] {rule.GameObjectPath} not found");
 						return;
 					}
 
 					Renderer rend = target.GetComponent<Renderer>();
 					if (rend == null)
 					{
-						Logger.LogError($"[ApplyRules] Renderer not found");
+						DebugMsg(LogLevel.Error, $"[ApplyRules] Renderer not found");
 						return;
 					}
 
 					Material mat = rend.material;
 					if (mat == null)
 					{
-						Logger.LogError($"[ApplyRules] Material not found");
+						DebugMsg(LogLevel.Error, $"[ApplyRules] Material not found");
 						return;
 					}
 
@@ -143,7 +143,7 @@ namespace MaterialRouter
 						Material copy = new Material(mat);
 						if (copy.NameFormatted() != rule.OldName)
 						{
-							Logger.LogError($"[ApplyRules] Material name mismatch");
+							DebugMsg(LogLevel.Error, $"[ApplyRules] Material name mismatch");
 							return;
 						}
 						foreach (Material x in rend.materials)

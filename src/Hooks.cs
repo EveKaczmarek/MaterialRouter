@@ -29,6 +29,7 @@ namespace MaterialRouter
 
 		internal class Hooks
 		{
+			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPrefix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
 			internal static void ChaControl_LoadCharaFbxDataAsync_Prefix(ChaControl __instance, ref Action<GameObject> actObj)
 			{
@@ -44,7 +45,8 @@ namespace MaterialRouter
 				};
 			}
 
-			[HarmonyPrefix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateType), typeof(ChaFileDefine.CoordinateType), typeof(bool))]
+			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
+			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateType), typeof(ChaFileDefine.CoordinateType), typeof(bool))]
 			internal static void ChaControl_ChangeCoordinateType_Prefix(ChaControl __instance)
 			{
 				MaterialRouterController pluginCtrl = GetController(__instance);
@@ -53,6 +55,7 @@ namespace MaterialRouter
 				pluginCtrl.ApplyOutfitTrigger();
 			}
 
+			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateTypeAndReload), new[] { typeof(bool) })]
 			internal static void ChaControl_ChangeCoordinateTypeAndReload_Postfix(ChaControl __instance)
 			{
@@ -62,6 +65,7 @@ namespace MaterialRouter
 				pluginCtrl.ApplyOutfitTrigger();
 			}
 
+			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateTypeAndReload), new[] { typeof(ChaFileDefine.CoordinateType), typeof(bool) })]
 			internal static void ChaControl_ChangeCoordinateTypeAndReload_Postfix2(ChaControl __instance)
 			{
@@ -100,6 +104,7 @@ namespace MaterialRouter
 
 		internal class HooksMaker
 		{
+			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(CvsClothesCopy), "CopyClothes")]
 			internal static void CvsClothesCopy_CopyClothes_Postfix(TMP_Dropdown[] ___ddCoordeType, Toggle[] ___tglKind)
 			{
