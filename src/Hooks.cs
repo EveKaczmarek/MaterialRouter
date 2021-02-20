@@ -27,6 +27,8 @@ namespace MaterialRouter
 			return path;
 		}
 
+		internal static Dictionary<ChaControl, List<string>> NewNameList = new Dictionary<ChaControl, List<string>>();
+
 		internal class Hooks
 		{
 			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
@@ -52,6 +54,7 @@ namespace MaterialRouter
 				MaterialRouterController pluginCtrl = GetController(__instance);
 				if (pluginCtrl == null) return;
 				DebugMsg(LogLevel.Warning, $"ChaControl_ChangeCoordinateType_Prefix [{pluginCtrl.CurrentCoordinateIndex}]");
+				pluginCtrl.BuildCheckList();
 				pluginCtrl.ApplyOutfitTrigger();
 			}
 
@@ -99,6 +102,28 @@ namespace MaterialRouter
 				if (pluginCtrl == null) return;
 				DebugMsg(LogLevel.Warning, $"MaterialEditorCharaController_CorrectTongue_Prefix [{pluginCtrl.CurrentCoordinateIndex}]");
 				pluginCtrl.CorrectTongue_Prefix();
+			}
+
+			internal static bool MaterialAPI_SetTexture_Prefix(GameObject __0, string __1)
+			{
+				if (__0 == null)
+					return true; // let ME handle it
+				ChaControl chaCtrl = __0.GetComponentInParent<ChaControl>();
+				if (chaCtrl == null || !NewNameList.ContainsKey(chaCtrl)) return true;
+				if (NewNameList[chaCtrl].Count == 0 || NewNameList[chaCtrl].IndexOf(__1) < 0) return true;
+				Renderer[] renderers = __0.GetComponentsInChildren<Renderer>(true);
+				foreach (Renderer renderer in renderers)
+				{
+					for (int i = 0; i < renderer.materials.Length; i++)
+					{
+						if (renderer.materials[i].NameFormatted() == __1)
+						{
+							DebugMsg(LogLevel.Warning, $"[MaterialAPI_SetTexture_Prefix][{__0.name}][{__1}] cloned/renamed material found");
+							return true;
+						}
+					}
+				}
+				return false;
 			}
 		}
 

@@ -28,8 +28,20 @@ namespace MaterialRouter
 					Logger.LogMessage($"[ImportBodyTrigger] no rule to import");
 					return;
 				}
-				BodyTrigger = data;
-				Logger.LogMessage($"[ImportBodyTrigger] {data?.Count} rule(s) imported");
+
+				int skipped = 0;
+				foreach (RouteRule rule in data)
+				{
+					if (BodyTrigger.Any(x => x.GameObjectPath == rule.GameObjectPath && x.OldName == rule.OldName && x.NewName == rule.NewName))
+					{
+						skipped++;
+						continue;
+					}
+					BodyTrigger.Add(rule);
+				}
+				BodyTrigger = SortRouteRules(BodyTrigger);
+
+				Logger.LogMessage($"[ImportBodyTrigger] {data?.Count - skipped} rule(s) imported, {skipped} rule(s) skipped");
 			}
 
 			internal void ExportBodyTrigger()
@@ -48,7 +60,11 @@ namespace MaterialRouter
 				Logger.LogMessage($"[ExportBodyTrigger] {data?.Count} rule(s) exported to {ExportFilePath}");
 			}
 
-			internal void ResetBodyTrigger() => BodyTrigger = new List<RouteRule>();
+			internal void ResetBodyTrigger()
+			{
+				BodyTrigger = new List<RouteRule>();
+				Logger.LogMessage($"[ResetBodyTrigger] done");
+			}
 
 			internal void ImportOutfitTrigger()
 			{
@@ -64,8 +80,20 @@ namespace MaterialRouter
 					Logger.LogMessage($"[ImportOutfitTrigger] no rule to import");
 					return;
 				}
-				OutfitTriggers[CurrentCoordinateIndex] = data;
-				Logger.LogMessage($"[ImportOutfitTrigger] {data?.Count} rule(s) imported");
+
+				int skipped = 0;
+				foreach (RouteRule rule in data)
+				{
+					if (OutfitTriggers[CurrentCoordinateIndex].Any(x => x.GameObjectPath == rule.GameObjectPath && x.OldName == rule.OldName && x.NewName == rule.NewName))
+					{
+						skipped++;
+						continue;
+					}
+					OutfitTriggers[CurrentCoordinateIndex].Add(rule);
+				}
+				OutfitTriggers[CurrentCoordinateIndex] = SortRouteRules(OutfitTriggers[CurrentCoordinateIndex]);
+
+				Logger.LogMessage($"[ImportOutfitTrigger] {data?.Count - skipped} rule(s) imported, {skipped} rule(s) skipped");
 			}
 
 			internal void ExportOutfitTrigger()
@@ -84,7 +112,18 @@ namespace MaterialRouter
 				Logger.LogMessage($"[ExportOutfitTrigger] {data?.Count} rule(s) exported to {ExportFilePath}");
 			}
 
-			internal void ResetOutfitTrigger() => OutfitTriggers[CurrentCoordinateIndex] = new List<RouteRule>();
+			internal void ResetOutfitTrigger()
+			{
+				OutfitTriggers[CurrentCoordinateIndex] = new List<RouteRule>();
+				Logger.LogMessage($"[ResetOutfitTrigger] done");
+			}
+
+			internal List<RouteRule> SortRouteRules(List<RouteRule> rules)
+			{
+				if (rules?.Count == 0)
+					return new List<RouteRule>();
+				return rules.OrderBy(x => x.GameObjectPath).ThenBy(x => x.Action).ToList();
+			}
 
 			internal void ClothingCopiedEvent(int srcIdx, int dstIdx, List<int> copySlots)
 			{
@@ -101,27 +140,13 @@ namespace MaterialRouter
 					if (rules?.Count > 0)
 						OutfitTriggers[dstIdx].AddRange(rules);
 				}
+				BuildCheckList();
 			}
 
 			internal void AccessoryTransferEvent(AccessoryTransferEventArgs ev)
 			{
-				int CoordinateIndex = CurrentCoordinateIndex;
-
-				if (!OutfitTriggers.ContainsKey(CoordinateIndex))
-					OutfitTriggers[CoordinateIndex] = new List<RouteRule>();
-				int srcIdx = ev.SourceSlotIndex;
-				int dstIdx = ev.DestinationSlotIndex;
-				string srcName = $"/ca_slot{srcIdx:00}/";
-				string dstName = $"/ca_slot{dstIdx:00}/";
-
-				OutfitTriggers[CoordinateIndex].RemoveAll(x => x.GameObjectPath.Contains(dstName));
-				var rules = OutfitTriggers[CoordinateIndex].Where(x => x.GameObjectPath.Contains(srcName));
-				if (rules?.Count() > 0)
-				{
-					byte[] data = MessagePackSerializer.Serialize(rules.ToList());
-					OutfitTriggers[CoordinateIndex].ForEach(x => x.GameObjectPath = x.GameObjectPath.Replace(srcName, dstName));
-					OutfitTriggers[CoordinateIndex].AddRange(MessagePackSerializer.Deserialize<List<RouteRule>>(data));
-				}
+				TransferAccSlotInfo(CurrentCoordinateIndex, ev);
+				BuildCheckList();
 			}
 
 			internal void AccessoryCopyEvent(AccessoryCopyEventArgs ev)
@@ -143,6 +168,34 @@ namespace MaterialRouter
 					if (rules?.Count > 0)
 						OutfitTriggers[dstIdx].AddRange(rules);
 				}
+				BuildCheckList();
+			}
+
+			internal void TransferAccSlotInfo(int CoordinateIndex, AccessoryTransferEventArgs ev)
+			{
+				if (!OutfitTriggers.ContainsKey(CoordinateIndex))
+					OutfitTriggers[CoordinateIndex] = new List<RouteRule>();
+				int srcIdx = ev.SourceSlotIndex;
+				int dstIdx = ev.DestinationSlotIndex;
+				string srcName = $"/ca_slot{srcIdx:00}/";
+				string dstName = $"/ca_slot{dstIdx:00}/";
+
+				OutfitTriggers[CoordinateIndex].RemoveAll(x => x.GameObjectPath.Contains(dstName));
+				var rules = OutfitTriggers[CoordinateIndex].Where(x => x.GameObjectPath.Contains(srcName));
+				if (rules?.Count() > 0)
+				{
+					byte[] data = MessagePackSerializer.Serialize(rules.ToList());
+					OutfitTriggers[CoordinateIndex].ForEach(x => x.GameObjectPath = x.GameObjectPath.Replace(srcName, dstName));
+					OutfitTriggers[CoordinateIndex].AddRange(MessagePackSerializer.Deserialize<List<RouteRule>>(data));
+				}
+			}
+
+			internal void RemoveAccSlotInfo(int CoordinateIndex, int SlotIndex)
+			{
+				if (!OutfitTriggers.ContainsKey(CoordinateIndex) || OutfitTriggers[CoordinateIndex]?.Count == 0)
+					return;
+				string slotName = $"/ca_slot{SlotIndex:00}/";
+				OutfitTriggers[CoordinateIndex].RemoveAll(x => x.GameObjectPath.Contains(slotName));
 			}
 		}
 	}

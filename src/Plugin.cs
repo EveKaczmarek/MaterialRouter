@@ -6,6 +6,7 @@ using System.IO;
 using ChaCustom;
 using UnityEngine;
 using UniRx;
+using ParadoxNotion.Serialization;
 
 using BepInEx;
 using BepInEx.Configuration;
@@ -26,13 +27,15 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.5.0";
+		public const string Version = "1.0.6.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
+		internal static ConfigEntry<bool> CfgSkipCloned { get; set; }
 
 		internal static int ExtDataVer = 1;
 		internal static string SavePath = "";
 		internal static Dictionary<string, string> SaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody.json", ["Outfit"] = "MaterialRouterOutfit.json", ["Outfits"] = "MaterialRouterOutfits.json" };
+		internal static MakerToggle tglSkipCloned;
 
 		internal static new ManualLogSource Logger;
 		internal static MaterialRouter Instance;
@@ -45,6 +48,12 @@ namespace MaterialRouter
 			Instance = this;
 
 			CfgDebugMode = Config.Bind("Debug", "Debug Mode", false);
+			CfgSkipCloned = Config.Bind("Maker", "Skip Cloned", true);
+			CfgSkipCloned.SettingChanged += (sender, args) =>
+			{
+				if (MakerAPI.InsideMaker)
+					tglSkipCloned.Value = CfgSkipCloned.Value;
+			};
 
 			SavePath = Path.Combine(Paths.GameRootPath, "Temp");
 		}
@@ -56,10 +65,12 @@ namespace MaterialRouter
 			HooksInstance = Harmony.CreateAndPatchAll(typeof(Hooks));
 
 			BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("com.deathweasel.bepinex.materialeditor", out PluginInfo PluginInfo);
-			Type MaterialEditorCharaController = (PluginInfo.Instance.GetType()).Assembly.GetType("KK_Plugins.MaterialEditor.MaterialEditorCharaController");
+			Type MaterialEditorCharaController = PluginInfo.Instance.GetType().Assembly.GetType("KK_Plugins.MaterialEditor.MaterialEditorCharaController");
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("OnReload", AccessTools.all, null, new[] { typeof(GameMode), typeof(bool) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_OnReload_Prefix)));
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("OnCoordinateBeingLoaded", AccessTools.all, null, new[] { typeof(ChaFileCoordinate), typeof(bool) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_OnCoordinateBeingLoaded_Prefix)));
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("CorrectTongue", AccessTools.all, null, new Type[0], null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_CorrectTongue_Prefix)));
+			Type MaterialEditorMaterialAPI = PluginInfo.Instance.GetType().Assembly.GetType("MaterialEditorAPI.MaterialAPI");
+			HooksInstance.Patch(MaterialEditorMaterialAPI.GetMethod("SetTexture", AccessTools.all, null, new[] { typeof(GameObject), typeof(string), typeof(string), typeof(Texture2D) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialAPI_SetTexture_Prefix)));
 
 			MakerAPI.MakerBaseLoaded += (object sender, RegisterCustomControlsEvent ev) =>
 			{
@@ -94,41 +105,30 @@ namespace MaterialRouter
 
 				ev.AddControl(new MakerText("BodyTrigger", category, this));
 
-				MakerButton btnExportBody = new MakerButton($"Export", category, Instance);
-				ev.AddControl(btnExportBody);
-				btnExportBody.OnClick.AddListener(delegate { pluginCtrl.ExportBodyTrigger(); });
-
-				MakerButton btnImportBody = new MakerButton("Import", category, Instance);
-				ev.AddControl(btnImportBody);
-				btnImportBody.OnClick.AddListener(delegate { pluginCtrl.ImportBodyTrigger(); });
-
-				MakerButton btnResetBody = new MakerButton("Reset", category, Instance);
-				ev.AddControl(btnResetBody);
-				btnResetBody.OnClick.AddListener(delegate { pluginCtrl.ResetBodyTrigger(); });
+				ev.AddControl(new MakerButton("Export", category, this)).OnClick.AddListener(delegate { pluginCtrl.ExportBodyTrigger(); });
+				ev.AddControl(new MakerButton("Import", category, this)).OnClick.AddListener(delegate { pluginCtrl.ImportBodyTrigger(); });
+				ev.AddControl(new MakerButton("Reset", category, this)).OnClick.AddListener(delegate { pluginCtrl.ResetBodyTrigger(); });
 
 				ev.AddControl(new MakerSeparator(category, this));
 
 				ev.AddControl(new MakerText("OutfitTriggers", category, this));
 
-				MakerButton btnExportOutfit = new MakerButton($"Export", category, Instance);
-				ev.AddControl(btnExportOutfit);
-				btnExportOutfit.OnClick.AddListener(delegate { pluginCtrl.ExportOutfitTrigger(); });
+				ev.AddControl(new MakerButton("Export", category, this)).OnClick.AddListener(delegate { pluginCtrl.ExportOutfitTrigger(); });
+				ev.AddControl(new MakerButton("Import", category, this)).OnClick.AddListener(delegate { pluginCtrl.ImportOutfitTrigger(); });
+				ev.AddControl(new MakerButton("Reset", category, this)).OnClick.AddListener(delegate { pluginCtrl.ResetOutfitTrigger(); });
 
-				MakerButton btnImportOutfit = new MakerButton("Import", category, Instance);
-				ev.AddControl(btnImportOutfit);
-				btnImportOutfit.OnClick.AddListener(delegate { pluginCtrl.ImportOutfitTrigger(); });
+				ev.AddControl(new MakerSeparator(category, this));
 
-				MakerButton btnResetOutfit = new MakerButton("Reset", category, Instance);
-				ev.AddControl(btnResetOutfit);
-				btnResetOutfit.OnClick.AddListener(delegate { pluginCtrl.ResetOutfitTrigger(); });
+				ev.AddControl(new MakerText("Config", category, this));
+
+				tglSkipCloned = ev.AddControl(new MakerToggle(category, "Get Template Skip Cloned", CfgSkipCloned.Value, this));
+				tglSkipCloned.ValueChanged.Subscribe(value => CfgSkipCloned.Value = value);
 
 				ev.AddControl(new MakerSeparator(category, this));
 
 				ev.AddControl(new MakerText("Tools", category, this));
 
-				MakerButton btnReload = new MakerButton("Reload", category, Instance);
-				ev.AddControl(btnReload);
-				btnReload.OnClick.AddListener(delegate
+				ev.AddControl(new MakerButton("Reload", category, Instance)).OnClick.AddListener(delegate
 				{
 					string CardPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Paths.ExecutablePath) + "_MaterialRouter.png");
 					chaCtrl.chaFile.SaveCharaFile(CardPath, byte.MaxValue, false);
@@ -141,25 +141,25 @@ namespace MaterialRouter
 					CustomBase.Instance.updateCustomUI = true;
 				});
 
-				ev.AddControl(new MakerButton("Head Renderer Info", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead));
-				ev.AddControl(new MakerButton("Body Renderer Info", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody));
+				ev.AddControl(new MakerButton("Head Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead));
+				ev.AddControl(new MakerButton("Body Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody));
 
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Top, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[0]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Bottom, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[1]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Bra, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[2]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Shorts, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[3]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Gloves, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[4]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Panst, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[5]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.Socks, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[6]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.InnerShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[7]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Clothes.OuterShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[8]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Top, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[0]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Bottom, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[1]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Bra, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[2]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Shorts, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[3]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Gloves, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[4]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Panst, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[5]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Socks, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[6]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.InnerShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[7]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.OuterShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[8]));
 
-				MakerAPI.AddAccessoryWindowControl(new MakerButton("Renderer Info", null, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
+				MakerAPI.AddAccessoryWindowControl(new MakerButton("Get Template", null, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
 
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2]));
-				ev.AddControl(new MakerButton("Renderer Info", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3]));
 			};
 		}
 
@@ -167,13 +167,42 @@ namespace MaterialRouter
 		{
 			if (go == null)
 				return;
+			MaterialRouterController pluginCtrl = GetController(chaCtrl);
 			Renderer[] rends = go.GetComponentsInChildren<Renderer>(true);
+			List<RouteRule> rules = new List<RouteRule>();
+			int skipped = 0;
 			foreach (Renderer rend in rends)
 			{
-				Logger.LogWarning("GameObjectPath: " + GetGameObjectPath(rend.transform).Replace(chaCtrl.gameObject.name + "/", ""));
 				foreach (Material mat in rend.materials)
-					Logger.LogInfo("Material: " + mat.NameFormatted());
+				{
+					string ObjPath = GetGameObjectPath(rend.transform).Replace(chaCtrl.gameObject.name + "/", "");
+					string MatName = mat.NameFormatted();
+
+					RouteRule rule = new RouteRule
+					{
+						GameObjectPath = ObjPath,
+						Action = Action.Clone,
+						OldName = MatName,
+						NewName = MatName + "_cloned"
+					};
+
+					RouteRule exist = pluginCtrl.CurOutfitTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
+					if (CfgSkipCloned.Value)
+					{
+						//if (pluginCtrl.CurOutfitTrigger.Any(x => x.GameObjectPath == ObjPath && (x.OldName == MatName || x.NewName == MatName)))
+						if (exist != null)
+						{
+							skipped++;
+							continue;
+						}
+					}
+					else
+						rule.Action = exist.Action;
+
+					rules.Add(rule);
+				}
 			}
+			Logger.LogWarning($"cloned/renamed skipped: {skipped}\n" + JSONSerializer.Serialize(rules.GetType(), rules, true));
 		}
 
 		internal static void DebugMsg(LogLevel LogLevel, string LogMsg)

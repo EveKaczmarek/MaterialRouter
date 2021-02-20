@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using UnityEngine;
 using MessagePack;
@@ -24,6 +25,9 @@ namespace MaterialRouter
 
 			protected override void OnCardBeingSaved(GameMode currentGameMode)
 			{
+				BodyTrigger = SortRouteRules(BodyTrigger);
+				for (int i = 0; i < 7; i++)
+					OutfitTriggers[i] = SortRouteRules(OutfitTriggers[i]);
 				PluginData ExtendedData = new PluginData();
 				ExtendedData.data.Add("BodyTrigger", MessagePackSerializer.Serialize(BodyTrigger));
 				ExtendedData.data.Add("OutfitTriggers", MessagePackSerializer.Serialize(OutfitTriggers));
@@ -33,8 +37,9 @@ namespace MaterialRouter
 
 			protected override void OnCoordinateBeingSaved(ChaFileCoordinate coordinate)
 			{
+				OutfitTriggers[CurrentCoordinateIndex] = SortRouteRules(OutfitTriggers[CurrentCoordinateIndex]);
 				PluginData ExtendedData = new PluginData();
-				ExtendedData.data.Add("OutfitTrigger", MessagePackSerializer.Serialize(CurOutfitTrigger));
+				ExtendedData.data.Add("OutfitTrigger", MessagePackSerializer.Serialize(OutfitTriggers[CurrentCoordinateIndex]));
 				ExtendedData.version = ExtDataVer;
 				SetCoordinateExtendedData(coordinate, ExtendedData);
 			}
@@ -51,16 +56,19 @@ namespace MaterialRouter
 				if (ExtendedData != null && ExtendedData.data.TryGetValue("OutfitTriggers", out object loadedOutfitTriggers) && loadedOutfitTriggers != null)
 					OutfitTriggers = MessagePackSerializer.Deserialize<Dictionary<int, List<RouteRule>>>((byte[]) loadedOutfitTriggers);
 
-				if (BodyTrigger?.Count == 0)
-					BodyTrigger = new List<RouteRule>();
+				BodyTrigger = SortRouteRules(BodyTrigger);
 				ApplyRules(BodyTrigger);
 
-				if (OutfitTriggers?.Count < 7)
-				{
+				if (OutfitTriggers?.Count == 0)
 					OutfitTriggers = new Dictionary<int, List<RouteRule>>();
-					for (int i = 0; i < 7; i++)
+				for (int i = 0; i < 7; i++)
+				{
+					if (!OutfitTriggers.ContainsKey(i))
 						OutfitTriggers[i] = new List<RouteRule>();
+					OutfitTriggers[i] = SortRouteRules(OutfitTriggers?[i]);
 				}
+
+				BuildCheckList();
 				ApplyRules(OutfitTriggers[CurrentCoordinateIndex]);
 			}
 
@@ -74,7 +82,18 @@ namespace MaterialRouter
 
 				if (OutfitTriggers[CurrentCoordinateIndex]?.Count == 0)
 					OutfitTriggers[CurrentCoordinateIndex] = new List<RouteRule>();
+				OutfitTriggers[CurrentCoordinateIndex] = SortRouteRules(OutfitTriggers[CurrentCoordinateIndex]);
+				BuildCheckList();
 				ApplyRules(OutfitTriggers[CurrentCoordinateIndex]);
+			}
+
+			internal void BuildCheckList()
+			{
+				NewNameList[ChaControl] = new List<string>();
+				if (!OutfitTriggers.ContainsKey(CurrentCoordinateIndex) || OutfitTriggers[CurrentCoordinateIndex]?.Count == 0)
+					return;
+				NewNameList[ChaControl].AddRange(OutfitTriggers[CurrentCoordinateIndex].Select(x => x.NewName).ToList());
+				DebugMsg(LogLevel.Info, $"[BuildCheckList] rule count {NewNameList[ChaControl].Count}");
 			}
 
 			internal void CorrectTongue_Prefix()
@@ -148,7 +167,6 @@ namespace MaterialRouter
 						}
 						foreach (Material x in rend.materials)
 						{
-							Logger.LogInfo($"[{x.NameFormatted()}][{rule.NewName}]");
 							if (x.NameFormatted() == rule.NewName)
 							{
 								DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already cloned");
