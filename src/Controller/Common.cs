@@ -98,6 +98,7 @@ namespace MaterialRouter
 
 			internal void CorrectTongue_Prefix()
 			{
+				ApplyBodyTrigger();
 				ApplyOutfitTrigger();
 			}
 
@@ -130,21 +131,21 @@ namespace MaterialRouter
 					if (target == null)
 					{
 						DebugMsg(LogLevel.Error, $"[ApplyRules] {rule.GameObjectPath} not found");
-						return;
+						continue;
 					}
 
 					Renderer rend = target.GetComponent<Renderer>();
 					if (rend == null)
 					{
 						DebugMsg(LogLevel.Error, $"[ApplyRules] Renderer not found");
-						return;
+						continue;
 					}
 
 					Material mat = rend.material;
 					if (mat == null)
 					{
 						DebugMsg(LogLevel.Error, $"[ApplyRules] Material not found");
-						return;
+						continue;
 					}
 
 					if (rule.Action == Action.Rename)
@@ -152,7 +153,7 @@ namespace MaterialRouter
 						if (rend.material.NameFormatted() == rule.NewName)
 						{
 							DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already renamed");
-							return;
+							continue;
 						}
 						mat.name = rule.NewName;
 						DebugMsg(LogLevel.Info, $"[ApplyRules][Rename][{rule.GameObjectPath}][{rule.OldName}][{rule.NewName}][{rend.materials.Length}]");
@@ -163,14 +164,14 @@ namespace MaterialRouter
 						if (copy.NameFormatted() != rule.OldName)
 						{
 							DebugMsg(LogLevel.Error, $"[ApplyRules] Material name mismatch");
-							return;
+							continue;
 						}
 						foreach (Material x in rend.materials)
 						{
 							if (x.NameFormatted() == rule.NewName)
 							{
 								DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already cloned");
-								return;
+								continue;
 							}
 						}
 						copy.CopyPropertiesFromMaterial(rend.material);

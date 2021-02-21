@@ -32,22 +32,6 @@ namespace MaterialRouter
 		internal class Hooks
 		{
 			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
-			[HarmonyPrefix, HarmonyPatch(typeof(ChaControl), "LoadCharaFbxDataAsync")]
-			internal static void ChaControl_LoadCharaFbxDataAsync_Prefix(ChaControl __instance, ref Action<GameObject> actObj)
-			{
-				MaterialRouterController pluginCtrl = GetController(__instance);
-				if (pluginCtrl == null) return;
-				Action<GameObject> oldAct = actObj;
-				actObj = delegate (GameObject o)
-				{
-					oldAct(o);
-					if (o == null) return;
-					DebugMsg(LogLevel.Warning, $"[ChaControl_LoadCharaFbxDataAsync_Prefix][ApplyBodyTrigger]");
-					pluginCtrl.ApplyBodyTrigger();
-				};
-			}
-
-			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateType), typeof(ChaFileDefine.CoordinateType), typeof(bool))]
 			internal static void ChaControl_ChangeCoordinateType_Prefix(ChaControl __instance)
 			{
