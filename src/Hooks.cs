@@ -49,6 +49,7 @@ namespace MaterialRouter
 				MaterialRouterController pluginCtrl = GetController(__instance);
 				if (pluginCtrl == null) return;
 				DebugMsg(LogLevel.Warning, $"ChaControl_ChangeCoordinateTypeAndReload_Postfix [{pluginCtrl.CurrentCoordinateIndex}]");
+				pluginCtrl.BuildCheckList();
 				pluginCtrl.ApplyOutfitTrigger();
 			}
 

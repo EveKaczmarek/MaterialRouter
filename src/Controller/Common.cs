@@ -166,14 +166,17 @@ namespace MaterialRouter
 							DebugMsg(LogLevel.Error, $"[ApplyRules] Material name mismatch");
 							continue;
 						}
+						bool skip = false;
 						foreach (Material x in rend.materials)
 						{
 							if (x.NameFormatted() == rule.NewName)
 							{
+								skip = true;
 								DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already cloned");
-								continue;
 							}
 						}
+						if (skip)
+							continue;
 						copy.CopyPropertiesFromMaterial(rend.material);
 						copy.name = rule.NewName;
 						rend.materials = rend.materials.AddToArray(copy);
