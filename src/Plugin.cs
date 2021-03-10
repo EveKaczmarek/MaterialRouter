@@ -21,13 +21,13 @@ using KKAPI.Maker.UI;
 namespace MaterialRouter
 {
 	[BepInPlugin(GUID, PluginName, Version)]
-	[BepInDependency("marco.kkapi", "1.1.5")]
+	[BepInDependency("marco.kkapi")]
 	[BepInDependency("com.deathweasel.bepinex.materialeditor", "2.5")]
 	public partial class MaterialRouter : BaseUnityPlugin
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.0.8.0";
+		public const string Version = "1.0.9.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 		internal static ConfigEntry<bool> CfgSkipCloned { get; set; }
@@ -36,6 +36,8 @@ namespace MaterialRouter
 		internal static string SavePath = "";
 		internal static Dictionary<string, string> SaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody.json", ["Outfit"] = "MaterialRouterOutfit.json", ["Outfits"] = "MaterialRouterOutfits.json" };
 		internal static MakerToggle tglSkipCloned;
+
+		internal static List<string> objClothesNames = new List<string>() { "ct_clothesTop", "ct_clothesBot", "ct_bra", "ct_shorts", "ct_gloves", "ct_panst", "ct_socks", "ct_shoes_inner", "ct_shoes_outer" };
 
 		internal static new ManualLogSource Logger;
 		internal static MaterialRouter Instance;
@@ -144,22 +146,33 @@ namespace MaterialRouter
 				ev.AddControl(new MakerButton("Head Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead));
 				ev.AddControl(new MakerButton("Body Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody));
 
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Top, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[0]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Bottom, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[1]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Bra, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[2]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Shorts, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[3]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Gloves, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[4]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Panst, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[5]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Socks, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[6]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.InnerShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[7]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.OuterShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[8]));
+				MakerButton MakerButton = new MakerButton("Material Router Template", null, this);
+				MakerButton.GroupingID = "MR";
+				MakerAPI.AddAccessoryWindowControl(MakerButton).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
 
-				MakerAPI.AddAccessoryWindowControl(new MakerButton("Get Template", null, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
+				Dictionary<MakerCategory, GameObject> ToDo = new Dictionary<MakerCategory, GameObject>
+				{
+					[MakerConstants.Hair.Back] = chaCtrl.objHair[0],
+					[MakerConstants.Hair.Front] = chaCtrl.objHair[1],
+					[MakerConstants.Hair.Side] = chaCtrl.objHair[2],
+					[MakerConstants.Hair.Extension] = chaCtrl.objHair[3],
 
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3]));
+					[MakerConstants.Clothes.Top] = chaCtrl.objClothes[0],
+					[MakerConstants.Clothes.Bottom] = chaCtrl.objClothes[1],
+					[MakerConstants.Clothes.Bra] = chaCtrl.objClothes[2],
+					[MakerConstants.Clothes.Shorts] = chaCtrl.objClothes[3],
+					[MakerConstants.Clothes.Gloves] = chaCtrl.objClothes[4],
+					[MakerConstants.Clothes.Panst] = chaCtrl.objClothes[5],
+					[MakerConstants.Clothes.Socks] = chaCtrl.objClothes[6],
+					[MakerConstants.Clothes.InnerShoes] = chaCtrl.objClothes[7],
+					[MakerConstants.Clothes.OuterShoes] = chaCtrl.objClothes[8],
+				};
+
+				foreach (KeyValuePair<MakerCategory, GameObject> x in ToDo)
+				{
+					MakerButton = new MakerButton("Material Router Template", x.Key, this);
+					ev.AddControl(MakerButton).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, x.Value));
+				}
 			};
 		}
 

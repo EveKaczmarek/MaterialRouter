@@ -134,9 +134,10 @@ namespace MaterialRouter
 
 				foreach (int slot in copySlots)
 				{
-					string name = "/" + ChaControl.objClothes[slot].name + "/";
+					string name = $"/{objClothesNames[slot]}/";
 					OutfitTriggers[dstIdx].RemoveAll(x => x.GameObjectPath.Contains(name));
-					List<RouteRule> rules = OutfitTriggers[srcIdx].Where(x => x.GameObjectPath.Contains(name)).ToList();
+
+					List<RouteRule> rules = OutfitTriggers[srcIdx].Where(x => x.GameObjectPath.Contains(name))?.ToList();
 					if (rules?.Count > 0)
 						OutfitTriggers[dstIdx].AddRange(rules);
 				}
