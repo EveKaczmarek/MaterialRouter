@@ -2,6 +2,7 @@
 using System.Linq;
 using System.IO;
 
+using UnityEngine;
 using ParadoxNotion.Serialization;
 using MessagePack;
 
@@ -191,12 +192,51 @@ namespace MaterialRouter
 				}
 			}
 
+			internal void RemoveAccSlotInfo(int SlotIndex) => RemoveAccSlotInfo(CurrentCoordinateIndex, SlotIndex);
 			internal void RemoveAccSlotInfo(int CoordinateIndex, int SlotIndex)
 			{
 				if (!OutfitTriggers.ContainsKey(CoordinateIndex) || OutfitTriggers[CoordinateIndex]?.Count == 0)
 					return;
 				string slotName = $"/ca_slot{SlotIndex:00}/";
 				OutfitTriggers[CoordinateIndex].RemoveAll(x => x.GameObjectPath.Contains(slotName));
+			}
+
+			internal void ImportFromRendererInfo(int SlotIndex)
+			{
+				GameObject go = ChaControl.GetAccessoryObject(SlotIndex);
+				if (go == null)
+					return;
+
+				Renderer[] rends = go.GetComponentsInChildren<Renderer>(true);
+				List<RouteRule> rules = new List<RouteRule>();
+				int skipped = 0;
+				int added = 0;
+				foreach (Renderer rend in rends)
+				{
+					foreach (Material mat in rend.materials)
+					{
+						string ObjPath = GetGameObjectPath(rend.transform).Replace(ChaControl.gameObject.name + "/", "");
+						string MatName = mat.NameFormatted();
+
+						RouteRule rule = new RouteRule
+						{
+							GameObjectPath = ObjPath,
+							Action = Action.Clone,
+							OldName = MatName,
+							NewName = MatName + "_cloned"
+						};
+
+						RouteRule exist = CurOutfitTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
+						if (exist != null)
+						{
+							skipped++;
+							continue;
+						}
+						CurOutfitTrigger.Add(rule);
+						added++;
+					}
+				}
+				Logger.LogMessage($"skipped: {skipped}, added: {added}");
 			}
 		}
 	}

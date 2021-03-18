@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -27,7 +28,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.1.0.0";
+		public const string Version = "1.1.1.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 		internal static ConfigEntry<bool> CfgSkipCloned { get; set; }
@@ -36,8 +37,11 @@ namespace MaterialRouter
 		internal static string SavePath = "";
 		internal static Dictionary<string, string> SaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody.json", ["Outfit"] = "MaterialRouterOutfit.json", ["Outfits"] = "MaterialRouterOutfits.json" };
 		internal static MakerToggle tglSkipCloned;
+		internal static MakerButton btmGetTemplate;
+		internal static MakerButton btmImportSetting;
+		internal static MakerButton btmRemoveSetting;
 
-		internal static List<string> objClothesNames = new List<string>() { "ct_clothesTop", "ct_clothesBot", "ct_bra", "ct_shorts", "ct_gloves", "ct_panst", "ct_socks", "ct_shoes_inner", "ct_shoes_outer" };
+		internal static List<string> objClothesNames = new List<string>() { "ct_clothesTop", "ct_top_parts_A", "ct_top_parts_B", "ct_top_parts_C", "ct_clothesBot", "ct_bra", "ct_shorts", "ct_gloves", "ct_panst", "ct_socks", "ct_shoes_inner", "ct_shoes_outer" };
 
 		internal static new ManualLogSource Logger;
 		internal static MaterialRouter Instance;
@@ -77,6 +81,18 @@ namespace MaterialRouter
 			MakerAPI.MakerBaseLoaded += (object sender, RegisterCustomControlsEvent ev) =>
 			{
 				HooksMakerInstance = Harmony.CreateAndPatchAll(typeof(HooksMaker));
+			};
+
+			MakerAPI.MakerFinishedLoading += (object sender, EventArgs ev) =>
+			{
+				btmGetTemplate.Visible.OnNext(false);
+				btmImportSetting.Visible.OnNext(false);
+				btmRemoveSetting.Visible.OnNext(false);
+			};
+
+			AccessoriesApi.SelectedMakerAccSlotChanged += (object sender, AccessorySlotEventArgs ev) =>
+			{
+				InitCurrentSlot();
 			};
 
 			MakerAPI.MakerExiting += (object sender, EventArgs ev) =>
@@ -143,8 +159,8 @@ namespace MaterialRouter
 					CustomBase.Instance.updateCustomUI = true;
 				});
 
-				ev.AddControl(new MakerButton("Head Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead));
-				ev.AddControl(new MakerButton("Body Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody));
+				ev.AddControl(new MakerButton("Head Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead, true));
+				ev.AddControl(new MakerButton("Body Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objBody, true));
 
 				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Top, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[0]));
 				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.Bottom, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[1]));
@@ -156,19 +172,25 @@ namespace MaterialRouter
 				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.InnerShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[7]));
 				ev.AddControl(new MakerButton("Get Template", MakerConstants.Clothes.OuterShoes, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objClothes[8]));
 
-				MakerAPI.AddAccessoryWindowControl(new MakerButton("Get Template", null, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
+				btmGetTemplate = MakerAPI.AddAccessoryWindowControl(new MakerButton("Get Template", null, this));
+				btmGetTemplate.OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot)));
+				btmImportSetting = MakerAPI.AddAccessoryWindowControl(new MakerButton("Import Setting", null, this));
+				btmImportSetting.OnClick.AddListener(() => pluginCtrl.ImportFromRendererInfo(AccessoriesApi.SelectedMakerAccSlot));
+				btmRemoveSetting = MakerAPI.AddAccessoryWindowControl(new MakerButton("Remove Setting", null, this));
+				btmRemoveSetting.OnClick.AddListener(() => pluginCtrl.RemoveAccSlotInfo(AccessoriesApi.SelectedMakerAccSlot));
 
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2]));
-				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3]));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Back, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[0], true));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Front, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[1], true));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Side, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[2], true));
+				ev.AddControl(new MakerButton("Get Template", MakerConstants.Hair.Extension, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHair[3], true));
 			};
 		}
 
-		internal static void PrintRendererInfo(ChaControl chaCtrl, GameObject go)
+		internal static void PrintRendererInfo(ChaControl chaCtrl, GameObject go, bool chara = false)
 		{
 			if (go == null)
 				return;
+
 			MaterialRouterController pluginCtrl = GetController(chaCtrl);
 			Renderer[] rends = go.GetComponentsInChildren<Renderer>(true);
 			List<RouteRule> rules = new List<RouteRule>();
@@ -187,51 +209,45 @@ namespace MaterialRouter
 						OldName = MatName,
 						NewName = MatName + "_cloned"
 					};
+
+					RouteRule exist = null;
+					if (chara)
+						exist = pluginCtrl.BodyTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
+					else
+						exist = pluginCtrl.CurOutfitTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
+
+					if (exist != null)
 					{
-						RouteRule exist = pluginCtrl.BodyTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
-						if (exist != null)
-						{
-							if (CfgSkipCloned.Value)
-							{
-								skipped++;
-								continue;
-							}
-							else
-								rule.Action = exist.Action;
-						}
-						/*
 						if (CfgSkipCloned.Value)
 						{
-							if (exist != null)
-							{
-								skipped++;
-								continue;
-							}
+							skipped++;
+							continue;
 						}
 						else
-						{
-							if (exist != null)
-								rule.Action = exist.Action;
-						}
-						*/
-					}
-					{
-						RouteRule exist = pluginCtrl.CurOutfitTrigger.Where(x => x.GameObjectPath == ObjPath && x.NewName == MatName).FirstOrDefault();
-						if (exist != null)
-						{
-							if (CfgSkipCloned.Value)
-							{
-								skipped++;
-								continue;
-							}
-							else
-								rule.Action = exist.Action;
-						}
+							rule.Action = exist.Action;
 					}
 					rules.Add(rule);
 				}
 			}
 			Logger.LogWarning($"cloned/renamed skipped: {skipped}\n" + JSONSerializer.Serialize(rules.GetType(), rules, true));
+		}
+
+		internal static void InitCurrentSlot()
+		{
+			if (!MakerAPI.InsideAndLoaded) return;
+
+			if (MakerAPI.GetCharacterControl()?.GetAccessoryObject(AccessoriesApi.SelectedMakerAccSlot) == null)
+			{
+				btmGetTemplate.Visible.OnNext(false);
+				btmImportSetting.Visible.OnNext(false);
+				btmRemoveSetting.Visible.OnNext(false);
+			}
+			else
+			{
+				btmGetTemplate.Visible.OnNext(true);
+				btmImportSetting.Visible.OnNext(true);
+				btmRemoveSetting.Visible.OnNext(true);
+			}
 		}
 
 		internal static void DebugMsg(LogLevel LogLevel, string LogMsg)

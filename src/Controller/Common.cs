@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +11,7 @@ using ExtensibleSaveFormat;
 
 using KKAPI;
 using KKAPI.Chara;
+using KKAPI.Maker;
 
 namespace MaterialRouter
 {
@@ -85,6 +87,15 @@ namespace MaterialRouter
 				OutfitTriggers[CurrentCoordinateIndex] = SortRouteRules(OutfitTriggers[CurrentCoordinateIndex]);
 				BuildCheckList();
 				ApplyRules(OutfitTriggers[CurrentCoordinateIndex]);
+
+				if (MakerAPI.InsideAndLoaded)
+					ChaControl.StartCoroutine(InitCurrentSlotCoroutine());
+
+				IEnumerator InitCurrentSlotCoroutine()
+				{
+					yield return null;
+					InitCurrentSlot();
+				}
 			}
 
 			internal void BuildCheckList()

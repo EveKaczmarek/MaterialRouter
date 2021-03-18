@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using ChaCustom;
@@ -33,13 +34,22 @@ namespace MaterialRouter
 		{
 			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeCoordinateType), typeof(ChaFileDefine.CoordinateType), typeof(bool))]
-			internal static void ChaControl_ChangeCoordinateType_Prefix(ChaControl __instance)
+			internal static void ChaControl_ChangeCoordinateType_Postfix(ChaControl __instance)
 			{
 				MaterialRouterController pluginCtrl = GetController(__instance);
 				if (pluginCtrl == null) return;
 				DebugMsg(LogLevel.Warning, $"ChaControl_ChangeCoordinateType_Prefix [{pluginCtrl.CurrentCoordinateIndex}]");
 				pluginCtrl.BuildCheckList();
 				pluginCtrl.ApplyOutfitTrigger();
+
+				if (MakerAPI.InsideAndLoaded)
+					__instance.StartCoroutine(InitCurrentSlotCoroutine());
+
+				IEnumerator InitCurrentSlotCoroutine()
+				{
+					yield return null;
+					InitCurrentSlot();
+				}
 			}
 
 			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
@@ -114,6 +124,12 @@ namespace MaterialRouter
 
 		internal class HooksMaker
 		{
+			[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.ChangeAccessory), typeof(int), typeof(int), typeof(int), typeof(string), typeof(bool))]
+			internal static void ChaControl_ChangeAccessory_Postfix()
+			{
+				InitCurrentSlot();
+			}
+
 			[HarmonyBefore(new string[] { "com.deathweasel.bepinex.materialeditor" })]
 			[HarmonyPostfix, HarmonyPatch(typeof(CvsClothesCopy), "CopyClothes")]
 			internal static void CvsClothesCopy_CopyClothes_Postfix(TMP_Dropdown[] ___ddCoordeType, Toggle[] ___tglKind)
