@@ -143,7 +143,11 @@ namespace MaterialRouter
 
 				MaterialRouterController pluginCtrl = GetController(MakerAPI.GetCharacterControl());
 				if (pluginCtrl != null)
+				{
 					pluginCtrl.ClothingCopiedEvent(___ddCoordeType[1].value, ___ddCoordeType[0].value, copySlots);
+					if (___ddCoordeType[0].value == CustomBase.Instance.chaCtrl.fileStatus.coordinateType)
+						CustomBase.Instance.chaCtrl.ChangeCoordinateTypeAndReload(false);
+				}
 			}
 		}
 	}
