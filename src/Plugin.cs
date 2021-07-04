@@ -28,7 +28,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string PluginName = "Material Router";
-		public const string Version = "1.1.2.0";
+		public const string Version = "1.3.0.0";
 
 		internal static ConfigEntry<bool> CfgDebugMode { get; set; }
 		internal static ConfigEntry<bool> CfgSkipCloned { get; set; }
@@ -77,7 +77,11 @@ namespace MaterialRouter
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("OnCoordinateBeingLoaded", AccessTools.all, null, new[] { typeof(ChaFileCoordinate), typeof(bool) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_OnCoordinateBeingLoaded_Prefix)));
 			HooksInstance.Patch(MaterialEditorCharaController.GetMethod("CorrectTongue", AccessTools.all, null, new Type[0], null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialEditorCharaController_CorrectTongue_Prefix)));
 			Type MaterialEditorMaterialAPI = PluginInfo.Instance.GetType().Assembly.GetType("MaterialEditorAPI.MaterialAPI");
-			HooksInstance.Patch(MaterialEditorMaterialAPI.GetMethod("SetTexture", AccessTools.all, null, new[] { typeof(GameObject), typeof(string), typeof(string), typeof(Texture2D) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialAPI_SetTexture_Prefix)));
+
+			if (MaterialEditorMaterialAPI.GetMethods().Single(x => x.Name == "SetTexture").GetParameters().ElementAtOrDefault(3)?.ParameterType == typeof(Texture))
+				HooksInstance.Patch(MaterialEditorMaterialAPI.GetMethod("SetTexture", AccessTools.all, null, new[] { typeof(GameObject), typeof(string), typeof(string), typeof(Texture) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialAPI_SetTexture_Prefix)));
+			else
+				HooksInstance.Patch(MaterialEditorMaterialAPI.GetMethod("SetTexture", AccessTools.all, null, new[] { typeof(GameObject), typeof(string), typeof(string), typeof(Texture2D) }, null), prefix: new HarmonyMethod(typeof(Hooks), nameof(Hooks.MaterialAPI_SetTexture_Prefix)));
 
 			MakerAPI.MakerBaseLoaded += (object sender, RegisterCustomControlsEvent ev) =>
 			{
@@ -158,6 +162,13 @@ namespace MaterialRouter
 					chaCtrl.ChangeCoordinateType(true);
 					chaCtrl.Reload();
 					CustomBase.Instance.updateCustomUI = true;
+				});
+
+				ev.AddControl(new MakerButton("Info", category, Instance)).OnClick.AddListener(delegate
+				{
+					Logger.LogInfo($"[BodyTrigger][{pluginCtrl?.BodyTrigger?.Count}]");
+					for (int i = 0; i < chaCtrl.chaFile.coordinate.Length; i++)
+						Logger.LogInfo($"[OutfitTriggers][{i}][{pluginCtrl?.OutfitTriggers?[i].Count}]");
 				});
 
 				ev.AddControl(new MakerButton("Head Get Template", MakerConstants.Face.All, this)).OnClick.AddListener(() => PrintRendererInfo(chaCtrl, chaCtrl.objHead, true));

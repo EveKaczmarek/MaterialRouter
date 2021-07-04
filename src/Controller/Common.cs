@@ -28,8 +28,12 @@ namespace MaterialRouter
 			protected override void OnCardBeingSaved(GameMode currentGameMode)
 			{
 				BodyTrigger = SortRouteRules(BodyTrigger);
-				for (int i = 0; i < 7; i++)
+				for (int i = 0; i < ChaControl.chaFile.coordinate.Length; i++)
+				{
+					if (!OutfitTriggers.ContainsKey(i))
+						OutfitTriggers[i] = new List<RouteRule>();
 					OutfitTriggers[i] = SortRouteRules(OutfitTriggers[i]);
+				}
 				PluginData ExtendedData = new PluginData();
 				ExtendedData.data.Add("BodyTrigger", MessagePackSerializer.Serialize(BodyTrigger));
 				ExtendedData.data.Add("OutfitTriggers", MessagePackSerializer.Serialize(OutfitTriggers));
@@ -63,7 +67,7 @@ namespace MaterialRouter
 
 				if (OutfitTriggers?.Count == 0)
 					OutfitTriggers = new Dictionary<int, List<RouteRule>>();
-				for (int i = 0; i < 7; i++)
+				for (int i = 0; i < ChaControl.chaFile.coordinate.Length; i++)
 				{
 					if (!OutfitTriggers.ContainsKey(i))
 						OutfitTriggers[i] = new List<RouteRule>();
@@ -161,13 +165,20 @@ namespace MaterialRouter
 
 					if (rule.Action == Action.Rename)
 					{
-						if (rend.material.NameFormatted() == rule.NewName)
+						foreach (Material x in rend.materials)
 						{
-							DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already renamed");
-							continue;
+							if (x.NameFormatted() == rule.NewName)
+							{
+								DebugMsg(LogLevel.Error, $"[ApplyRules] Material {rule.OldName} already renamed");
+								continue;
+							}
+
+							if (x.NameFormatted() == rule.OldName)
+                            {
+								x.name = rule.NewName;
+								DebugMsg(LogLevel.Info, $"[ApplyRules][Rename][{rule.GameObjectPath}][{rule.OldName}][{rule.NewName}][{rend.materials.Length}]");
+							}
 						}
-						mat.name = rule.NewName;
-						DebugMsg(LogLevel.Info, $"[ApplyRules][Rename][{rule.GameObjectPath}][{rule.OldName}][{rule.NewName}][{rend.materials.Length}]");
 					}
 					else if (rule.Action == Action.Clone)
 					{
