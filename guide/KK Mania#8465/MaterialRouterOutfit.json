@@ -1,0 +1,14 @@
+[
+    {
+        "GameObjectPath": "BodyTop/ct_bra/cf_o_root/bodytights/n_bot_b/o_body_allbodytights_bot_b",
+        "Action": "Rename",
+        "OldName": "cf_m_bodytights",
+        "NewName": "cf_m_bodytights_half"
+    },
+    {
+        "GameObjectPath": "BodyTop/ct_bra/cf_o_root/bodytights/n_top_b/o_bra_b",
+        "Action": "Rename",
+        "OldName": "cf_m_bodytights",
+        "NewName": "cf_m_bodytights_half"
+    }
+]
