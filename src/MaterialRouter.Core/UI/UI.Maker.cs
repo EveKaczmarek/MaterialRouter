@@ -310,6 +310,30 @@ namespace MaterialRouter
 
 				GUILayout.BeginHorizontal(GUI.skin.box);
 				{
+					bool _boolAutoRefresh = _cfgAutoRefresh;
+					if (_boolAutoRefresh != GUILayout.Toggle(_cfgAutoRefresh, new GUIContent(" Auto Refresh", "Auto refresh on setting changed to take effect")))
+					{
+						_cfgAutoRefresh = !_cfgAutoRefresh;
+						MaterialRouter._cfgAutoRefresh.Value = _cfgAutoRefresh;
+					}
+
+					GUILayout.FlexibleSpace();
+				}
+				GUILayout.EndHorizontal();
+
+				GUILayout.BeginHorizontal(GUI.skin.box);
+				{
+					GUILayout.Label("Reset", _label);
+
+					if (GUILayout.Button("slot", _buttonElem))
+					{
+						_pluginCtrl.RemoveSlotInfo(_curGameObject);
+						if (_cfgAutoRefresh)
+							_chaCtrl.ChangeCoordinateTypeAndReload(false);
+					}
+
+					GUILayout.Space(20);
+
 					GUILayout.Label("Refresh", _label);
 
 					if (GUILayout.Button("chara", _buttonElem))
@@ -320,14 +344,6 @@ namespace MaterialRouter
 					if (GUILayout.Button("coord", _buttonElem))
 					{
 						_chaCtrl.ChangeCoordinateTypeAndReload(false);
-					}
-
-					bool _boolAutoRefresh = _cfgAutoRefresh;
-					if (_boolAutoRefresh != GUILayout.Toggle(_cfgAutoRefresh, new GUIContent(" Auto Refresh", "Auto refresh on setting changed to take effect")))
-					{
-						_cfgAutoRefresh = !_cfgAutoRefresh;
-						//if (MaterialRouter._cfgAutoRefresh.Value != _cfgAutoRefresh)
-						MaterialRouter._cfgAutoRefresh.Value = _cfgAutoRefresh;
 					}
 
 					GUILayout.FlexibleSpace();

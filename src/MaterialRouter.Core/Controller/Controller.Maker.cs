@@ -38,16 +38,17 @@ namespace MaterialRouter
 			internal void AccessoryTransferEvent(AccessoryTransferEventArgs _ev)
 			{
 				TransferAccSlotInfo(_currentCoordinateIndex, _ev);
+				ChaControl.ChangeCoordinateTypeAndReload(false);
 			}
 
 			internal void TransferAccSlotInfo(int _coordinateIndex, AccessoryTransferEventArgs _ev)
 			{
-				string _srcName = $"/ca_slot{_ev.SourceSlotIndex:00}/";
-				string _dstName = $"/ca_slot{_ev.DestinationSlotIndex:00}/";
+				string _srcName = $"ca_slot{_ev.SourceSlotIndex:00}";
+				string _dstName = $"ca_slot{_ev.DestinationSlotIndex:00}";
 
 				RouteRuleList.RemoveAll(x => x.ObjectType == ObjectType.Accessory && x.Coordinate == _coordinateIndex && x.GameObjectName == _dstName);
 				List<RouteRule> _copy = RouteRuleList.Where(x => x.ObjectType == ObjectType.Accessory && x.Coordinate == _coordinateIndex && x.GameObjectName == _srcName).ToList().JsonClone<List<RouteRule>>();
-				if (_copy?.Count() > 0)
+				if (_copy?.Count > 0)
 				{
 					_copy.ForEach(x => x.GameObjectName = _dstName);
 					RouteRuleList.AddRange(_copy);
@@ -62,7 +63,7 @@ namespace MaterialRouter
 
 				foreach (int _slotIndex in _copiedSlotIndexes)
 				{
-					string _gameObjectName = $"/ca_slot{_slotIndex:00}/";
+					string _gameObjectName = $"ca_slot{_slotIndex:00}";
 					RouteRuleList.RemoveAll(x => x.ObjectType == ObjectType.Accessory && x.Coordinate == _dstCoordinateIndex && x.GameObjectName == _gameObjectName);
 					List<RouteRule> _copy = RouteRuleList.Where(x => x.ObjectType == ObjectType.Accessory && x.Coordinate == _srcCoordinateIndex && x.GameObjectName == _gameObjectName).ToList().JsonClone<List<RouteRule>>();
 					if (_copy?.Count > 0)
@@ -71,6 +72,9 @@ namespace MaterialRouter
 						RouteRuleList.AddRange(_copy);
 					}
 				}
+
+				if (_dstCoordinateIndex == _currentCoordinateIndex)
+					ChaControl.ChangeCoordinateTypeAndReload(false);
 			}
 
 			internal void RemoveAccSlotInfo(int _slotIndex) => RemoveAccSlotInfo(_currentCoordinateIndex, _slotIndex);
@@ -78,6 +82,13 @@ namespace MaterialRouter
 			{
 				string _gameObjectName = $"ca_slot{_slotIndex:00}";
 				RouteRuleList.RemoveAll(x => x.ObjectType == ObjectType.Accessory && x.Coordinate == _coordinateIndex && x.GameObjectName == _gameObjectName);
+			}
+
+			internal void RemoveSlotInfo(GameObject _gameObject)
+			{
+				ObjectType _objectType = GetObjectType(_gameObject);
+				int _coordinateIndex = (_objectType == ObjectType.Character || _objectType == ObjectType.Hair) ? -1 : _currentCoordinateIndex;
+				RouteRuleList.RemoveAll(x => x.ObjectType == _objectType && x.Coordinate == _coordinateIndex && x.GameObjectName == _gameObject.name);
 			}
 
 			internal void ImportFromRendererInfo(int _slotIndex)
