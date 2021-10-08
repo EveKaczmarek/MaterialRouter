@@ -17,6 +17,7 @@ namespace MaterialRouter
 
 			private Vector2 _listScrollPos = Vector2.zero;
 			private readonly GUILayoutOption _buttonElem = GUILayout.Width(60);
+			private GUIStyle _labelBoldOrange;
 
 			internal bool _cfgAutoRefresh = false;
 			internal GameObject _curGameObject = null;
@@ -42,12 +43,16 @@ namespace MaterialRouter
 
 				base.Awake();
 			}
-			/*
+
 			protected override void InitStyle()
 			{
+				_labelBoldOrange = new GUIStyle(GUI.skin.label);
+				_labelBoldOrange.normal.textColor = new Color(1, 0.7f, 0, 1);
+				_labelBoldOrange.fontStyle = FontStyle.Bold;
+
 				base.InitStyle();
 			}
-			*/
+
 			internal override void CloseWindow()
 			{
 				_curGameObject = null;
@@ -353,6 +358,13 @@ namespace MaterialRouter
 				GUILayout.BeginHorizontal(GUI.skin.box);
 				GUILayout.Label(GUI.tooltip);
 				GUILayout.EndHorizontal();
+
+				if (JetPack.MoreAccessories.BuggyBootleg)
+				{
+					GUILayout.BeginHorizontal(GUI.skin.box);
+					GUILayout.TextArea("MoreAccessories experimental build detected\nThis version is not meant for productive use", _labelBoldOrange);
+					GUILayout.EndHorizontal();
+				}
 			}
 		}
 	}

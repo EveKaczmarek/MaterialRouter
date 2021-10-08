@@ -16,15 +16,21 @@ namespace MaterialRouter
 {
 	[BepInPlugin(GUID, Name, Version)]
 	[BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
-	[BepInDependency("com.deathweasel.bepinex.materialeditor", "3.1.5")]
+#if KK
+	[BepInDependency("com.deathweasel.bepinex.materialeditor", "3.1.1")]
+#else
+	[BepInDependency("com.deathweasel.bepinex.materialeditor", "3.1.2")]
+#endif
 	[BepInIncompatibility("KK_ClothesLoadOption")]
+#if !DEBUG
 	[BepInIncompatibility("com.jim60105.kk.studiocoordinateloadoption")]
 	[BepInIncompatibility("com.jim60105.kk.coordinateloadoption")]
+#endif
 	public partial class MaterialRouter : BaseUnityPlugin
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string Name = "Material Router";
-		public const string Version = "2.0.1.0";
+		public const string Version = "2.0.2.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
@@ -58,6 +64,13 @@ namespace MaterialRouter
 
 		private void Start()
 		{
+#if KK && !DEBUG
+			if (JetPack.MoreAccessories.BuggyBootleg)
+			{
+				_logger.LogError($"Could not load {Name} {Version} because it is incompatible with MoreAccessories experimental build");
+				return;
+			}
+#endif
 			{
 				BaseUnityPlugin _instance = JetPack.Toolbox.GetPluginInstance("madevil.kk.MovUrAcc");
 				if (_instance != null && !JetPack.Toolbox.PluginVersionCompare(_instance, "1.4.0.0"))

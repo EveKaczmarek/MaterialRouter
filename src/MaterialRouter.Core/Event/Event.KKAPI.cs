@@ -60,6 +60,7 @@ namespace MaterialRouter
 
 				_bottonMaterialRouter = MakerAPI.AddAccessoryWindowControl(new MakerButton(_labelMaterialRouter, null, this));
 				_bottonMaterialRouter.OnClick.AddListener(() => PopupMenu(JetPack.Accessory.GetObjAccessory(_chaCtrl, JetPack.CharaMaker.CurrentAccssoryIndex)));
+				_bottonMaterialRouter.GroupingID = "Madevil";
 				_bottonMaterialRouter.Visible.OnNext(false);
 
 				//if (JetPack.Game.ConsoleActive)
