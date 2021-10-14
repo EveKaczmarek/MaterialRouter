@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 using ChaCustom;
@@ -30,10 +31,11 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string Name = "Material Router";
-		public const string Version = "2.0.2.0";
+		public const string Version = "2.1.0.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
+		internal static ConfigEntry<string> _cfgExportPath;
 
 		internal static MakerButton _bottonMaterialRouter;
 
@@ -41,6 +43,9 @@ namespace MaterialRouter
 		internal static MaterialRouter _instance;
 		internal static Harmony _hooksInstance;
 		internal static Harmony _hooksMakerInstance;
+
+		internal static string _exportSavePath = "";
+		internal static Dictionary<string, string> _exportSaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody", ["Outfit"] = "MaterialRouterOutfit", ["Outfits"] = "MaterialRouterOutfits" };
 
 		private void Awake()
 		{
@@ -59,7 +64,8 @@ namespace MaterialRouter
 				}
 			};
 
-			_exportSavePath = Path.Combine(Paths.GameRootPath, "Temp");
+			_cfgExportPath = Config.Bind("General", "Export Path", Paths.ConfigPath);
+			_exportSavePath = _cfgExportPath.Value;
 		}
 
 		private void Start()

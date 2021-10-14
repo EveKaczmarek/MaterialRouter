@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 using ChaCustom;
 using UnityEngine;
@@ -9,6 +11,7 @@ using HarmonyLib;
 
 using KKAPI.Maker;
 using KKAPI.Maker.UI;
+using KKAPI.Utilities;
 
 namespace MaterialRouter
 {
@@ -18,14 +21,21 @@ namespace MaterialRouter
 		{
 			MakerAPI.RegisterCustomSubCategories += (_sender, _args) =>
 			{
+				const string _fileExt = ".json";
+				const string _fileFilter = "Exported Setting (*.json)|*.json|All files|*.*";
+
 				ChaControl _chaCtrl = CustomBase.Instance.chaCtrl;
+
 				MakerCategory _category = new MakerCategory("05_ParameterTop", "tglMaterialRouter", MakerConstants.Parameter.Attribute.Position + 1, "Router");
 				_args.AddSubCategory(_category);
 
 				_args.AddControl(new MakerText("BodyTrigger", _category, this));
 
 				_args.AddControl(new MakerButton("Export", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ExportBodyTrigger(); });
-				_args.AddControl(new MakerButton("Import", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ImportBodyTrigger(); });
+				_args.AddControl(new MakerButton("Import", _category, this)).OnClick.AddListener(delegate
+				{
+					OpenFileDialog.Show(_string => OnFileAccept(_string, "Body"), "Open Exported Setting", _exportSavePath, _fileFilter, _fileExt);
+				});
 				_args.AddControl(new MakerButton("Reset", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ResetBodyTrigger(); });
 
 				_args.AddControl(new MakerSeparator(_category, this));
@@ -33,7 +43,10 @@ namespace MaterialRouter
 				_args.AddControl(new MakerText("OutfitTriggers", _category, this));
 
 				_args.AddControl(new MakerButton("Export", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ExportOutfitTrigger(); });
-				_args.AddControl(new MakerButton("Import", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ImportOutfitTrigger(); });
+				_args.AddControl(new MakerButton("Import", _category, this)).OnClick.AddListener(delegate
+				{
+					OpenFileDialog.Show(_string => OnFileAccept(_string, "Outfit"), "Open Exported Setting", _exportSavePath, _fileFilter, _fileExt);
+				});
 				_args.AddControl(new MakerButton("Reset", _category, this)).OnClick.AddListener(delegate { _makerPluginCtrl.ResetOutfitTrigger(); });
 
 				const string _labelMaterialRouter = "Material Router";
@@ -110,6 +123,31 @@ namespace MaterialRouter
 		{
 			_charaConfigWindow._curGameObject = _gameObject;
 			_charaConfigWindow.enabled = _gameObject != null;
+		}
+
+		internal void OnFileAccept(string[] _string, string _mode)
+		{
+			if (_string == null || _string.Length == 0 || _string[0].IsNullOrEmpty()) return;
+			_exportSavePath = Path.GetDirectoryName(_string[0]);
+
+			if (_mode == "Body")
+				_makerPluginCtrl.ImportBodyTrigger(_string[0]);
+			if (_mode == "Outfit")
+				_makerPluginCtrl.ImportOutfitTrigger(_string[0]);
+
+			CustomBase.Instance.chaCtrl.StartCoroutine(OnImportCoroutine(_mode));
+		}
+
+		internal IEnumerator OnImportCoroutine(string _mode)
+		{
+			yield return JetPack.Toolbox.WaitForEndOfFrame;
+			yield return JetPack.Toolbox.WaitForEndOfFrame;
+
+			ChaControl _chaCtrl = CustomBase.Instance.chaCtrl;
+			if (_mode == "Body")
+				ReloadChara(_chaCtrl);
+			if (_mode == "Outfit")
+				_chaCtrl.ChangeCoordinateTypeAndReload(false);
 		}
 	}
 }

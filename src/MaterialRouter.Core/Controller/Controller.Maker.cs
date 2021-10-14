@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
@@ -13,9 +15,6 @@ namespace MaterialRouter
 {
 	public partial class MaterialRouter
 	{
-		internal static string _exportSavePath = "";
-		internal static Dictionary<string, string> _exportSaveFile = new Dictionary<string, string>() { ["Body"] = "MaterialRouterBody.json", ["Outfit"] = "MaterialRouterOutfit.json", ["Outfits"] = "MaterialRouterOutfits.json" };
-
 		public partial class MaterialRouterController : CharaCustomFunctionController
 		{
 			internal void ClothingCopiedEvent(int _srcCoordinateIndex, int _dstCoordinateIndex, List<int> _copiedSlotIndexes)
@@ -146,9 +145,8 @@ namespace MaterialRouter
 				return _rules;
 			}
 
-			internal void ImportBodyTrigger()
+			internal void ImportBodyTrigger(string _exportFilePath)
 			{
-				string _exportFilePath = Path.Combine(_exportSavePath, _exportSaveFile["Body"]);
 				if (!File.Exists(_exportFilePath))
 				{
 					_logger.LogMessage($"[ImportBodyTrigger] {_exportFilePath} file doesn't exist");
@@ -172,6 +170,17 @@ namespace MaterialRouter
 					RouteRuleList.Add(_rule);
 				}
 				_logger.LogMessage($"[ImportBodyTrigger] {_rules?.Count - _skipped} rule(s) imported, {_skipped} rule(s) skipped");
+				/*
+				StartCoroutine(OnImportCoroutine());
+
+				IEnumerator OnImportCoroutine()
+				{
+					yield return JetPack.Toolbox.WaitForEndOfFrame;
+					yield return JetPack.Toolbox.WaitForEndOfFrame;
+
+					ReloadChara(ChaControl);
+				}
+				*/
 			}
 
 			internal void ExportBodyTrigger()
@@ -185,7 +194,7 @@ namespace MaterialRouter
 				_rules = SortRouteRules(_rules);
 				if (!Directory.Exists(_exportSavePath))
 					Directory.CreateDirectory(_exportSavePath);
-				string _exportFilePath = Path.Combine(_exportSavePath, _exportSaveFile["Body"]);
+				string _exportFilePath = Path.Combine(_exportSavePath, $"{_exportSaveFile["Body"]}_{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.json");
 				string _json = JSONSerializer.Serialize(_rules.GetType(), _rules, true);
 				File.WriteAllText(_exportFilePath, _json);
 				_logger.LogMessage($"[ExportBodyTrigger] {_rules?.Count} rule(s) exported to {_exportFilePath}");
@@ -197,9 +206,8 @@ namespace MaterialRouter
 				_logger.LogMessage($"[ResetBodyTrigger] done");
 			}
 
-			internal void ImportOutfitTrigger()
+			internal void ImportOutfitTrigger(string _exportFilePath)
 			{
-				string _exportFilePath = Path.Combine(_exportSavePath, _exportSaveFile["Outfit"]);
 				if (!File.Exists(_exportFilePath))
 				{
 					_logger.LogMessage($"[ImportOutfitTrigger] {_exportFilePath} file doesn't exist");
@@ -223,6 +231,17 @@ namespace MaterialRouter
 					RouteRuleList.Add(_rule);
 				}
 				_logger.LogMessage($"[ImportOutfitTrigger] {_rules?.Count - _skipped} rule(s) imported, {_skipped} rule(s) skipped");
+				/*
+				StartCoroutine(OnImportCoroutine());
+
+				IEnumerator OnImportCoroutine()
+				{
+					yield return JetPack.Toolbox.WaitForEndOfFrame;
+					yield return JetPack.Toolbox.WaitForEndOfFrame;
+
+					ChaControl.ChangeCoordinateTypeAndReload(false);
+				}
+				*/
 			}
 
 			internal void ExportOutfitTrigger()
@@ -236,7 +255,7 @@ namespace MaterialRouter
 				_rules = SortRouteRules(_rules);
 				if (!Directory.Exists(_exportSavePath))
 					Directory.CreateDirectory(_exportSavePath);
-				string _exportFilePath = Path.Combine(_exportSavePath, _exportSaveFile["Outfit"]);
+				string _exportFilePath = Path.Combine(_exportSavePath, $"{_exportSaveFile["Outfit"]}_{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.json");
 				string _json = JSONSerializer.Serialize(_rules.GetType(), _rules, true);
 				File.WriteAllText(_exportFilePath, _json);
 				_logger.LogMessage($"[ExportOutfitTrigger] {_rules?.Count} rule(s) exported to {_exportFilePath}");

@@ -101,7 +101,7 @@ namespace MaterialRouter
 
 										GUILayout.BeginHorizontal(GUI.skin.box, GUILayout.ExpandWidth(true));
 										{
-											GUILayout.Label(_renderer.name, _label);
+											GUILayout.Label(new GUIContent(_renderer.name, "Name of the renderer"), _label);
 										}
 										GUILayout.EndHorizontal();
 
@@ -118,7 +118,7 @@ namespace MaterialRouter
 													_realOldName = _rule.OldName;
 													GUILayout.BeginHorizontal(GUI.skin.box, GUILayout.ExpandWidth(true));
 													{
-														GUILayout.Label(_rule.OldName, _labelDisabled);
+														GUILayout.Label(new GUIContent(_rule.OldName, "Original name of the material"), _labelDisabled);
 
 														GUILayout.FlexibleSpace();
 
@@ -186,7 +186,7 @@ namespace MaterialRouter
 														else
 														{
 															GUILayout.Label($"[{_rule.Action}]", _labelAlignCenterCyan, _buttonElem);
-															GUILayout.Label(_material.NameFormatted(), _labelDisabled);
+															GUILayout.Label(new GUIContent(_material.NameFormatted(), $"Name of {_rule.Action.ToString().ToLower()}d materal"), _labelDisabled);
 
 															GUILayout.FlexibleSpace();
 
@@ -217,7 +217,7 @@ namespace MaterialRouter
 													}
 													else
 													{
-														GUILayout.Label(_material.NameFormatted(), _labelDisabled);
+														GUILayout.Label(new GUIContent(_material.NameFormatted(), "Original name of the material"), _labelDisabled);
 
 														GUILayout.FlexibleSpace();
 
