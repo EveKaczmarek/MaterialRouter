@@ -16,7 +16,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Controller\Controller.Maker.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.Maker.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\UI.Template.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Event\Event.KKAPI.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Event\Event.JetPack.cs" />
   </ItemGroup>

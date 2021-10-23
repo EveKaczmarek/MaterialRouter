@@ -31,7 +31,7 @@ namespace MaterialRouter
 				{
 					if (JetPack.CharaMaker.CurrentAccssoryIndex < 0)
 					{
-						_charaConfigWindow.CloseWindow();
+						_charaConfigWindow.SetWindowClose();
 						return;
 					}
 
@@ -42,7 +42,7 @@ namespace MaterialRouter
 					int i = _mappingToggleClothes.IndexOf(_args.SideToggle.name);
 					if (i < 0)
 					{
-						_charaConfigWindow.CloseWindow();
+						_charaConfigWindow.SetWindowClose();
 						return;
 					}
 					_charaConfigWindow._curGameObject = _chaCtrl.objClothes[i];
@@ -52,7 +52,7 @@ namespace MaterialRouter
 					int i = _mappingToggleHair.IndexOf(_args.SideToggle.name);
 					if (i < 0)
 					{
-						_charaConfigWindow.CloseWindow();
+						_charaConfigWindow.SetWindowClose();
 						return;
 					}
 					_charaConfigWindow._curGameObject = _chaCtrl.objHair[i];

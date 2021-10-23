@@ -31,7 +31,7 @@ namespace MaterialRouter
 	{
 		public const string GUID = "madevil.kk.mr";
 		public const string Name = "Material Router";
-		public const string Version = "2.1.0.0";
+		public const string Version = "2.1.1.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;

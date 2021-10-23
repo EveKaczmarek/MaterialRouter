@@ -11,7 +11,7 @@ namespace MaterialRouter
 	{
 		internal static MaterialRouterUI _charaConfigWindow;
 
-		internal class MaterialRouterUI : TemplateUI
+		internal class MaterialRouterUI : JetPack.UI.Template
 		{
 			private MaterialRouterController _pluginCtrl => _chaCtrl?.gameObject?.GetComponent<MaterialRouterController>();
 
@@ -53,7 +53,12 @@ namespace MaterialRouter
 				base.InitStyle();
 			}
 
-			internal override void CloseWindow()
+			internal void SetWindowClose()
+            {
+				CloseWindow();
+			}
+
+			protected override void CloseWindow()
 			{
 				_curGameObject = null;
 				base.CloseWindow();
@@ -97,7 +102,7 @@ namespace MaterialRouter
 
 										GameObject _gameObject = _renderer.GetComponentInParent<ListInfoComponent>()?.gameObject;
 										ObjectType _objectType = GetObjectType(_gameObject);
-										List<RouteRule> _rules = _pluginCtrl.RouteRuleList.Where(x => x.ObjectType == _objectType && x.GameObjectName == _gameObject.name && x.RendererName == _renderer.name).OrderBy(x => (int) x.Action).ToList();
+										List<RouteRule> _rules = _pluginCtrl.RouteRuleList.Where(x => x.ObjectType == _objectType && x.Coordinate == _currentCoordinateIndex && x.GameObjectName == _gameObject.name && x.RendererName == _renderer.name).OrderBy(x => (int) x.Action).ToList();
 
 										GUILayout.BeginHorizontal(GUI.skin.box, GUILayout.ExpandWidth(true));
 										{
