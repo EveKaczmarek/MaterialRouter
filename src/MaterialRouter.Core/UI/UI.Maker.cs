@@ -2,6 +2,7 @@
 using System.Linq;
 
 using UnityEngine;
+using ChaCustom;
 
 using JetPack;
 
@@ -40,8 +41,16 @@ namespace MaterialRouter
 				_windowInitPos.y = 80;
 
 				_cfgAutoRefresh = MaterialRouter._cfgAutoRefresh.Value;
+				_passThrough = _cfgDragPass.Value;
 
 				base.Awake();
+			}
+
+			protected override bool OnGUIshow()
+			{
+				if (CustomBase.Instance?.chaCtrl == null) return false;
+
+				return true;
 			}
 
 			protected override void InitStyle()
@@ -54,13 +63,14 @@ namespace MaterialRouter
 			}
 
 			internal void SetWindowClose()
-            {
+			{
 				CloseWindow();
 			}
 
 			protected override void CloseWindow()
 			{
 				_curGameObject = null;
+				_hasFocus = false;
 				base.CloseWindow();
 			}
 
@@ -79,6 +89,16 @@ namespace MaterialRouter
 			{
 				_windowTitle = "Material Router - " + _curGameObject?.name;
 				base.DrawDragWindow(_windowID);
+			}
+
+			protected override void DrawExtraTitleButtons()
+            {
+				if (GUI.Button(new Rect(_windowSize.x - 50, 4, 23, 23), new GUIContent("0", "Config window will not block mouse drag from outside (experemental)"), (_passThrough ? _buttonActive : GUI.skin.button)))
+				{
+					_passThrough = !_passThrough;
+					_cfgDragPass.Value = _passThrough;
+					_logger.LogMessage($"Pass through mode: {(_passThrough ? "ON" : "OFF")}");
+				}
 			}
 
 			protected override void DragWindowContent()

@@ -12,6 +12,7 @@ using HarmonyLib;
 using KKAPI;
 using KKAPI.Chara;
 using KKAPI.Maker.UI;
+using KKAPI.Utilities;
 
 namespace MaterialRouter
 {
@@ -30,12 +31,17 @@ namespace MaterialRouter
 	public partial class MaterialRouter : BaseUnityPlugin
 	{
 		public const string GUID = "madevil.kk.mr";
+#if DEBUG
+		public const string Name = "Material Router (Debug Build)";
+#else
 		public const string Name = "Material Router";
-		public const string Version = "2.1.1.0";
+#endif
+		public const string Version = "2.2.0.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
 		internal static ConfigEntry<string> _cfgExportPath;
+		internal static ConfigEntry<bool> _cfgDragPass;
 
 		internal static MakerButton _bottonMaterialRouter;
 
@@ -64,17 +70,35 @@ namespace MaterialRouter
 				}
 			};
 
+			_cfgDragPass = Config.Bind("Maker", "Drag Pass Mode", false, new ConfigDescription("Setting window will not block mouse dragging", null, new ConfigurationManagerAttributes { Order = 15, Browsable = !JetPack.CharaStudio.Running }));
+			_cfgDragPass.SettingChanged += (_sender, _args) =>
+			{
+				if (_charaConfigWindow == null) return;
+				if (_charaConfigWindow._passThrough != _cfgDragPass.Value)
+				{
+					_charaConfigWindow._passThrough = _cfgDragPass.Value;
+				}
+			};
+
 			_cfgExportPath = Config.Bind("General", "Export Path", Paths.ConfigPath);
 			_exportSavePath = _cfgExportPath.Value;
 		}
 
 		private void Start()
 		{
-#if KK && !DEBUG
+#if KK
 			if (JetPack.MoreAccessories.BuggyBootleg)
 			{
+#if DEBUG
+				if (!JetPack.MoreAccessories.Installed)
+				{
+					_logger.LogError($"Backward compatibility in BuggyBootleg MoreAccessories is disabled");
+					return;
+				}
+#else
 				_logger.LogError($"Could not load {Name} {Version} because it is incompatible with MoreAccessories experimental build");
 				return;
+#endif
 			}
 #endif
 			{
@@ -102,10 +126,6 @@ namespace MaterialRouter
 
 		internal static void ReloadChara(ChaControl _chaCtrl)
 		{
-			/*
-			_chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)_chaCtrl.fileStatus.coordinateType);
-			_chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)_chaCtrl.fileStatus.coordinateType, false);
-			*/
 			string _cardPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Paths.ExecutablePath) + "_MaterialRouter.png");
 			_chaCtrl.chaFile.SaveCharaFile(_cardPath, byte.MaxValue, false);
 			_chaCtrl.chaFile.LoadFileLimited(_cardPath);
