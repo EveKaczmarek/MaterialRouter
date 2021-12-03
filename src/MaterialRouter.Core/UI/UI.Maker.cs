@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
@@ -92,7 +92,7 @@ namespace MaterialRouter
 			}
 
 			protected override void DrawExtraTitleButtons()
-            {
+			{
 				if (GUI.Button(new Rect(_windowSize.x - 50, 4, 23, 23), new GUIContent("0", "Config window will not block mouse drag from outside (experemental)"), (_passThrough ? _buttonActive : GUI.skin.button)))
 				{
 					_passThrough = !_passThrough;
@@ -107,13 +107,18 @@ namespace MaterialRouter
 				{
 					GUILayout.BeginVertical();
 					{
-						if (!(_curGameObject == null))
+						if (_curGameObject != null && _curGameObject.GetComponent<ComponentLookupTable>() != null)
 						{
-							Renderer[] _renderers = _curGameObject?.GetComponentsInChildren<Renderer>(true);
+							List<Renderer> _renderers = _curGameObject.GetComponent<ComponentLookupTable>().Components<Renderer>();
+							if (_curGameObject.name == "ct_clothesTop" && _curGameObject.transform.Find("ct_top_parts_A") != null)
+							{
+								foreach (Transform _child in _curGameObject.transform)
+									_renderers.AddRange(_child.GetComponent<ComponentLookupTable>().Components<Renderer>());
+							}
 
 							_listScrollPos = GUILayout.BeginScrollView(_listScrollPos, false, false, GUI.skin.horizontalScrollbar, GUI.skin.verticalScrollbar, GUI.skin.box);
 							{
-								if (_renderers?.Length > 0)
+								if (_renderers?.Count > 0)
 								{
 									foreach (Renderer _renderer in _renderers)
 									{
@@ -122,7 +127,8 @@ namespace MaterialRouter
 
 										GameObject _gameObject = _renderer.GetComponentInParent<ListInfoComponent>()?.gameObject;
 										ObjectType _objectType = GetObjectType(_gameObject);
-										List<RouteRule> _rules = _pluginCtrl.RouteRuleList.Where(x => x.ObjectType == _objectType && x.Coordinate == _currentCoordinateIndex && x.GameObjectName == _gameObject.name && x.RendererName == _renderer.name).OrderBy(x => (int) x.Action).ToList();
+										int _coordinateIndex = (_objectType == ObjectType.Character || _objectType == ObjectType.Hair) ? -1 : _currentCoordinateIndex;
+										List<RouteRule> _rules = _pluginCtrl.RouteRuleList.Where(x => x.ObjectType == _objectType && x.Coordinate == _coordinateIndex && x.GameObjectName == _gameObject.name && x.RendererName == _renderer.name).OrderBy(x => (int)x.Action).ToList();
 
 										GUILayout.BeginHorizontal(GUI.skin.box, GUILayout.ExpandWidth(true));
 										{
@@ -387,7 +393,7 @@ namespace MaterialRouter
 				if (JetPack.MoreAccessories.BuggyBootleg)
 				{
 					GUILayout.BeginHorizontal(GUI.skin.box);
-					GUILayout.TextArea("MoreAccessories experimental build detected\nThis version is not meant for productive use", _labelBoldOrange);
+					GUILayout.TextArea("MoreAccessories experimental build detected\nThis version is not meant for production use", _labelBoldOrange);
 					GUILayout.EndHorizontal();
 				}
 			}

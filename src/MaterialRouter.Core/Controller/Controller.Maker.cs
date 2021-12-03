@@ -103,7 +103,13 @@ namespace MaterialRouter
 				if (_gameObject == null) return _rules;
 
 				ObjectType _objectType = GetObjectType(_gameObject);
-				Renderer[] _renderers = _gameObject.GetComponentsInChildren<Renderer>(true);
+				List<Renderer> _renderers = _gameObject.GetComponent<ComponentLookupTable>().Components<Renderer>();
+				if (_gameObject.name == "ct_clothesTop" && _gameObject.transform.Find("ct_top_parts_A") != null)
+				{
+					foreach (Transform _child in _gameObject.transform)
+						_renderers.AddRange(_child.GetComponent<ComponentLookupTable>().Components<Renderer>());
+				}
+
 				int _skipped = 0;
 				int _coordinateIndex = (_objectType == ObjectType.Character || _objectType == ObjectType.Hair) ? -1 : _makerPluginCtrl._currentCoordinateIndex;
 				foreach (Renderer _renderer in _renderers)

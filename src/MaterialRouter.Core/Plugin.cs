@@ -36,7 +36,7 @@ namespace MaterialRouter
 #else
 		public const string Name = "Material Router";
 #endif
-		public const string Version = "2.2.0.0";
+		public const string Version = "2.3.0.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
@@ -102,15 +102,25 @@ namespace MaterialRouter
 			}
 #endif
 			{
+				string _version = "1.4";
 				BaseUnityPlugin _instance = JetPack.Toolbox.GetPluginInstance("madevil.kk.MovUrAcc");
-				if (_instance != null && !JetPack.Toolbox.PluginVersionCompare(_instance, "1.4.0.0"))
-					_logger.LogError($"MovUrAcc 1.4+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+				if (_instance != null && !JetPack.Toolbox.PluginVersionCompare(_instance, _version))
+				{
+					_logger.LogError($"MovUrAcc {_version}+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+					if (!JetPack.Game.ConsoleActive)
+						_logger.LogMessage($"[{Name}] MovUrAcc {_version}+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+				}
 			}
 
 			{
+				string _version = "1.8";
 				BaseUnityPlugin _instance = JetPack.Toolbox.GetPluginInstance("madevil.kk.ca");
-				if (_instance != null && !JetPack.Toolbox.PluginVersionCompare(_instance, "1.8.0.0"))
-					_logger.LogError($"Character Accessory 1.8+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+				if (_instance != null && !JetPack.Toolbox.PluginVersionCompare(_instance, _version))
+				{
+					_logger.LogError($"Character Accessory {_version}+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+					if (!JetPack.Game.ConsoleActive)
+						_logger.LogMessage($"[{Name}] Character Accessory {_version}+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
+				}
 			}
 
 			CharacterApi.RegisterExtraBehaviour<MaterialRouterController>(GUID);
