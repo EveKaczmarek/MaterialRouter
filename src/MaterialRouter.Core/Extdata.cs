@@ -8,10 +8,15 @@ using ParadoxNotion.Serialization;
 
 using BepInEx.Logging;
 
+#if KKS
+using ExtensibleSaveFormat;
+#endif
+
 namespace MaterialRouter
 {
 	public partial class MaterialRouter
 	{
+		internal static string ExtDataKey = GUID;
 		internal static int ExtDataVer = 2;
 
 		internal static List<string> _objClothesNames = new List<string>() { "ct_clothesTop", "ct_clothesBot", "ct_bra", "ct_shorts", "ct_gloves", "ct_panst", "ct_socks", "ct_shoes_inner", "ct_shoes_outer" };
@@ -172,5 +177,70 @@ namespace MaterialRouter
 
 			return ObjectType.Unknown;
 		}
+#if KKS
+		internal static void InitCardImport()
+		{
+			ExtendedSave.CardBeingImported += CardBeingImported;
+		}
+
+		internal static void CardBeingImported(Dictionary<string, PluginData> _importedExtData, Dictionary<int, int?> _coordinateMapping)
+		{
+			List<RouteRule> RouteRuleList = new List<RouteRule>();
+
+			if (_importedExtData.TryGetValue(ExtDataKey, out PluginData _pluginData))
+			{
+				if (_pluginData.version == 1)
+				{
+					if (_pluginData.data.TryGetValue("BodyTrigger", out object _loadedBodyTrigger) && _loadedBodyTrigger != null)
+					{
+						List<RouteRuleV1> _tempBodyTrigger = MessagePackSerializer.Deserialize<List<RouteRuleV1>>((byte[]) _loadedBodyTrigger);
+						if (_tempBodyTrigger?.Count > 0)
+						{
+							List<RouteRule> _tempRouteRuleList = MigrationV1(_tempBodyTrigger);
+							RouteRuleList.AddRange(_tempRouteRuleList);
+						}
+					}
+					if (_pluginData.data.TryGetValue("OutfitTriggers", out object _loadedOutfitTriggers) && _loadedOutfitTriggers != null)
+					{
+						Dictionary<int, List<RouteRuleV1>> _tempOutfitTriggers = MessagePackSerializer.Deserialize<Dictionary<int, List<RouteRuleV1>>>((byte[]) _loadedOutfitTriggers);
+						foreach (KeyValuePair<int, List<RouteRuleV1>> _kvp in _tempOutfitTriggers)
+						{
+							if (_kvp.Value?.Count > 0)
+							{
+								List<RouteRule> _tempRouteRuleList = MigrationV1(_kvp.Value);
+								_tempRouteRuleList.ForEach(x => x.Coordinate = _kvp.Key);
+								RouteRuleList.AddRange(_tempRouteRuleList);
+							}
+						}
+					}
+				}
+				else
+				{
+					if (_pluginData.data.TryGetValue("RouteRuleList", out object _loadedRouteRuleList) && _loadedRouteRuleList != null)
+					{
+						List<RouteRule> _tempRouteRuleList = MessagePackSerializer.Deserialize<List<RouteRule>>((byte[]) _loadedRouteRuleList);
+						if (_tempRouteRuleList?.Count > 0)
+							RouteRuleList.AddRange(_tempRouteRuleList);
+					}
+				}
+
+				_importedExtData.Remove(ExtDataKey);
+
+				if (RouteRuleList?.Count > 0)
+				{
+					for (int i = 0; i < RouteRuleList.Count; i++)
+					{
+						int _coordinateIndex = RouteRuleList[i].Coordinate;
+						if (_coordinateIndex < 0) continue;
+						RouteRuleList[i].Coordinate = (int) _coordinateMapping[_coordinateIndex];
+					}
+
+					PluginData _pluginDataNew = new PluginData() { version = ExtDataVer };
+					_pluginDataNew.data.Add("RouteRuleList", MessagePackSerializer.Serialize(RouteRuleList));
+					_importedExtData[ExtDataKey] = _pluginDataNew;
+				}
+			}
+		}
+#endif
 	}
 }

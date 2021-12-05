@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
+using UnityEngine;
 using ChaCustom;
 
 namespace MaterialRouter
@@ -64,6 +65,8 @@ namespace MaterialRouter
 					return;
 				}
 			};
+
+			JetPack.Chara.OnLoadCharaFbxData += (_sender, _args) => OnLoadCharaFbxData(_args.ChaControl, _args.GameObject);
 		}
 
 		internal static void InitCurrentSlot()
@@ -81,6 +84,17 @@ namespace MaterialRouter
 			yield return JetPack.Toolbox.WaitForEndOfFrame;
 			yield return JetPack.Toolbox.WaitForEndOfFrame;
 			InitCurrentSlot();
+		}
+
+		internal static void OnLoadCharaFbxData(ChaControl _chaCtrl, GameObject _gameObject)
+		{
+			if (_gameObject == null) return;
+			{
+				MaterialRouterController _pluginCtrl = GetController(_chaCtrl);
+				if (_pluginCtrl == null) return;
+
+				_pluginCtrl.ApplyGameObjectRules(_gameObject);
+			};
 		}
 	}
 }

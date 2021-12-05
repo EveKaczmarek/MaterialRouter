@@ -15,6 +15,7 @@ namespace MaterialRouter
 	{
 		internal static class Hooks
 		{
+			/*
 			[HarmonyPrefix, HarmonyPatch(typeof(ChaControl), nameof(ChaControl.LoadCharaFbxDataAsync))]
 			internal static void ChaControl_LoadCharaFbxDataAsync_Prefix(ChaControl __instance, ref Action<GameObject> actObj)
 			{
@@ -30,7 +31,7 @@ namespace MaterialRouter
 					_pluginCtrl.ApplyGameObjectRules(_gameObject);
 				};
 			}
-
+			*/
 			internal static void MaterialEditorCharaController_OnReload_Prefix(CharaCustomFunctionController __instance)
 			{
 				ChaControl _chaCtrl = __instance.ChaControl;

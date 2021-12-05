@@ -9,6 +9,8 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 
+using ExtensibleSaveFormat;
+
 using KKAPI;
 using KKAPI.Chara;
 using KKAPI.Maker.UI;
@@ -18,6 +20,7 @@ namespace MaterialRouter
 {
 	[BepInPlugin(GUID, Name, Version)]
 	[BepInDependency(KoikatuAPI.GUID, KoikatuAPI.VersionConst)]
+	[BepInDependency(ExtendedSave.GUID, ExtendedSave.Version)]
 #if KK
 	[BepInDependency("com.deathweasel.bepinex.materialeditor", "3.1.1")]
 #else
@@ -36,7 +39,7 @@ namespace MaterialRouter
 #else
 		public const string Name = "Material Router";
 #endif
-		public const string Version = "2.3.0.0";
+		public const string Version = "2.3.1.0";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
@@ -122,7 +125,9 @@ namespace MaterialRouter
 						_logger.LogMessage($"[{Name}] Character Accessory {_version}+ is required to work properly, version {_instance.Info.Metadata.Version} detected");
 				}
 			}
-
+#if KKS
+			InitCardImport();
+#endif
 			CharacterApi.RegisterExtraBehaviour<MaterialRouterController>(GUID);
 
 			_hooksInstance = Harmony.CreateAndPatchAll(typeof(Hooks), "MaterialRouter");
