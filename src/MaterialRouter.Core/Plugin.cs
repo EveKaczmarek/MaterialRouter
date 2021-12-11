@@ -27,10 +27,6 @@ namespace MaterialRouter
 	[BepInDependency("com.deathweasel.bepinex.materialeditor", "3.1.2")]
 #endif
 	[BepInIncompatibility("KK_ClothesLoadOption")]
-#if !DEBUG
-	[BepInIncompatibility("com.jim60105.kk.studiocoordinateloadoption")]
-	[BepInIncompatibility("com.jim60105.kk.coordinateloadoption")]
-#endif
 	public partial class MaterialRouter : BaseUnityPlugin
 	{
 		public const string GUID = "madevil.kk.mr";
@@ -39,7 +35,7 @@ namespace MaterialRouter
 #else
 		public const string Name = "Material Router";
 #endif
-		public const string Version = "2.3.1.0";
+		public const string Version = "2.3.1.1";
 
 		internal static ConfigEntry<bool> _cfgDebugMode;
 		internal static ConfigEntry<bool> _cfgAutoRefresh;
@@ -102,6 +98,12 @@ namespace MaterialRouter
 				_logger.LogError($"Could not load {Name} {Version} because it is incompatible with MoreAccessories experimental build");
 				return;
 #endif
+			}
+
+			if (!JetPack.CoordinateLoadOption.Safe)
+			{
+				_logger.LogError($"Could not load {Name} {Version} because it is incompatible with outdated CoordinateLoadOption");
+				return;
 			}
 #endif
 			{
